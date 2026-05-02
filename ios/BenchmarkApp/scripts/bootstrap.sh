@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# Fetch the binary + cloned dependencies the BenchmarkApp project needs:
+#
+#   1. Vendored/llama.xcframework  (llama.cpp Metal build, ~168 MB)
+#   2. Vendored/Anemll             (cloned source for AnemllCore SwiftPM target)
+#
+# Optional: if `xcodegen` is installed and you've edited project.yml, this
+# script also regenerates BenchmarkApp.xcodeproj. Most users do NOT need
+# xcodegen — the .xcodeproj is committed.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+LLAMA_TAG="${LLAMA_TAG:-b8999}"
+LLAMA_ZIP_URL="https://github.com/ggml-org/llama.cpp/releases/download/${LLAMA_TAG}/llama-${LLAMA_TAG}-xcframework.zip"
+VENDORED_DIR="Vendored"
+LLAMA_FRAMEWORK="${VENDORED_DIR}/llama.xcframework"
+ANEMLL_DIR="${VENDORED_DIR}/Anemll"
+ANEMLL_PKG="${ANEMLL_DIR}/anemll-swift-cli/Package.swift"
+
+mkdir -p "${VENDORED_DIR}"
+
+# 1. llama.xcframework
+if [ ! -d "${LLAMA_FRAMEWORK}" ]; then
+    echo "Downloading llama.xcframework (${LLAMA_TAG}) …"
+    TMP_ZIP="$(mktemp -t llama-xcf).zip"
+    trap 'rm -f "${TMP_ZIP}"' EXIT
+    curl -L --fail -o "${TMP_ZIP}" "${LLAMA_ZIP_URL}"
+    UNPACK_DIR="$(mktemp -d -t llama-unpack)"
+    unzip -q "${TMP_ZIP}" -d "${UNPACK_DIR}"
+    if [ -d "${UNPACK_DIR}/llama.xcframework" ]; then
+        mv "${UNPACK_DIR}/llama.xcframework" "${LLAMA_FRAMEWORK}"
+    elif [ -d "${UNPACK_DIR}/build-apple/llama.xcframework" ]; then
+        mv "${UNPACK_DIR}/build-apple/llama.xcframework" "${LLAMA_FRAMEWORK}"
+    else
+        echo "ERROR: Could not locate llama.xcframework inside the release zip." >&2
+        find "${UNPACK_DIR}" -maxdepth 3 -name "llama.xcframework" -print
+        exit 1
+    fi
+    rm -rf "${UNPACK_DIR}"
+    echo "  -> ${LLAMA_FRAMEWORK}"
+else
+    echo "${LLAMA_FRAMEWORK} already present."
+fi
+
+# 2. Anemll (SwiftPM Package.swift lives in a subdirectory; SPM cannot resolve from a remote URL).
+if [ ! -d "${ANEMLL_DIR}" ]; then
+    echo "Cloning Anemll …"
+    git clone --depth 1 https://github.com/Anemll/Anemll.git "${ANEMLL_DIR}"
+else
+    echo "${ANEMLL_DIR} already present."
+fi
+
+# Patch Anemll's swift-transformers pin from branch:main to a tagged 1.x range.
+# Upstream branch:main HEAD removed the Tokenizers product (now target-only),
+# which breaks john-rocky/CoreML-LLM. Pinning to 1.0.0..<2.0.0 keeps both happy.
+if grep -q 'swift-transformers".*branch: "main"' "${ANEMLL_PKG}"; then
+    echo "Patching Anemll Package.swift to pin swift-transformers 1.x …"
+    sed -i '' 's|.package(url: "https://github.com/huggingface/swift-transformers", branch: "main").*|.package(url: "https://github.com/huggingface/swift-transformers", "1.0.0"..<"2.0.0"),|' "${ANEMLL_PKG}"
+fi
+
+# 3. Optional: regenerate the Xcode project (only needed if you edit project.yml).
+if command -v xcodegen >/dev/null 2>&1; then
+    if [ "${REGEN_XCODEPROJ:-0}" = "1" ] || [ ! -d "BenchmarkApp.xcodeproj" ]; then
+        echo "Generating BenchmarkApp.xcodeproj …"
+        xcodegen generate
+    else
+        echo "BenchmarkApp.xcodeproj already present (set REGEN_XCODEPROJ=1 to force regen)."
+    fi
+fi
+
+cat <<'EOF'
+
+Done. Open the project:
+    open BenchmarkApp.xcodeproj
+
+In Xcode:
+  1. Set your Apple Developer Team in Signing & Capabilities.
+  2. Select your iPhone as the run destination.
+  3. ⌘R.
+
+Optional: to enable the MediaPipe / LiteRT-LM runtime, add
+https://github.com/paescebu/SwiftTasksGenAI via File → Add Package Dependencies.
+
+First Xcode build resolves SPM (mlx-swift-lm, swift-huggingface, swift-transformers,
+executorch, Anemll, CoreMLLLM). Takes several minutes.
+EOF

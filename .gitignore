@@ -1,0 +1,42 @@
+# Xcode — per-user state only (the .xcodeproj itself is committed)
+xcuserdata/
+DerivedData/
+build/
+.build/
+*.xcuserstate
+*.swiftpm/
+*.xcworkspace/contents.xcworkspacedata.lock
+*.xcworkspace/xcshareddata/swiftpm/
+
+# Vendored binary frameworks + cloned packages (re-fetched by scripts/bootstrap.sh)
+ios/BenchmarkApp/Vendored/
+
+# Swift Package Manager
+Package.resolved
+
+# CocoaPods (we don't use it, but just in case)
+Pods/
+
+# macOS
+.DS_Store
+
+# Models and weights — never commit
+*.gguf
+*.safetensors
+*.mlpackage
+*.mlmodelc
+*.mlmodel
+*.bin
+*.onnx
+*.tflite
+*.task
+
+# Per-instance results — keep raw/ structure but ignore device-private dumps unless contributed via PR
+results/raw/local-*
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
