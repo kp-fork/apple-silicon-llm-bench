@@ -24,18 +24,26 @@ public actor MLXRuntime: LLMRuntime {
         progress: @Sendable @escaping (Double) -> Void
     ) async throws {
         let configuration = ModelConfiguration(id: model.id)
+        print("[MLX] load starting: \(model.id)")
+        let t0 = CFAbsoluteTimeGetCurrent()
         do {
             let container = try await loadModelContainer(
                 from: HubDownloaderBridge(client: HubClient.default),
                 using: HFTokenizerLoaderBridge(),
                 configuration: configuration,
                 progressHandler: { p in
+                    let pct = Int(p.fractionCompleted * 100)
+                    print(String(format: "[MLX] download progress: %d%% (%lld/%lld bytes)",
+                                  pct, p.completedUnitCount, p.totalUnitCount))
                     progress(p.fractionCompleted)
                 }
             )
             self.container = container
             self.loadedModelId = model.id
+            let dt = CFAbsoluteTimeGetCurrent() - t0
+            print(String(format: "[MLX] load complete in %.2fs", dt))
         } catch {
+            print("[MLX] load FAILED: \(error.localizedDescription)")
             throw LLMRuntimeError.loadFailed(error.localizedDescription)
         }
     }

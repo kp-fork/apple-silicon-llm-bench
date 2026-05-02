@@ -23,18 +23,27 @@ public struct HubDownloaderBridge: MLXLMCommon.Downloader {
         useLatest: Bool,
         progressHandler: @Sendable @escaping (Foundation.Progress) -> Void
     ) async throws -> URL {
+        print("[HubBridge] download id=\(id) rev=\(revision ?? "main") patterns=\(patterns)")
         guard let repoID = HuggingFace.Repo.ID(rawValue: id) else {
+            print("[HubBridge] invalid repo id")
             throw NSError(domain: "MLXBridges", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "Invalid HF repo id: \(id)"])
         }
-        return try await client.downloadSnapshot(
-            of: repoID,
-            revision: revision ?? "main",
-            matching: patterns,
-            progressHandler: { @MainActor progress in
-                progressHandler(progress)
-            }
-        )
+        do {
+            let url = try await client.downloadSnapshot(
+                of: repoID,
+                revision: revision ?? "main",
+                matching: patterns,
+                progressHandler: { @MainActor progress in
+                    progressHandler(progress)
+                }
+            )
+            print("[HubBridge] downloaded to \(url.path)")
+            return url
+        } catch {
+            print("[HubBridge] download FAILED: \(error.localizedDescription)")
+            throw error
+        }
     }
 }
 

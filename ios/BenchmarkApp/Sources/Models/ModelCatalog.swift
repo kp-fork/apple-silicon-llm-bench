@@ -51,7 +51,7 @@ public enum ModelCatalog {
             displayName: "Gemma 4 E2B (4-bit)",
             quantization: "Q4",
             parameterCountB: 2.0,
-            onDiskSizeMB: 1300,
+            onDiskSizeMB: 3580,
             hfRepoId: "mlx-community/gemma-4-e2b-it-4bit"
         ),
         ModelInfo(
@@ -59,7 +59,7 @@ public enum ModelCatalog {
             displayName: "Gemma 4 E4B (4-bit)",
             quantization: "Q4",
             parameterCountB: 4.0,
-            onDiskSizeMB: 2600,
+            onDiskSizeMB: 5800,
             hfRepoId: "mlx-community/gemma-4-e4b-it-4bit"
         ),
         ModelInfo(
