@@ -121,8 +121,13 @@ struct RunView: View {
             case .idle:
                 Text("Idle").foregroundStyle(.secondary)
             case .loadingModel(let p):
-                ProgressView(value: p) {
-                    Text("Loading model… \(Int(p * 100))%")
+                VStack(alignment: .leading, spacing: 6) {
+                    ProgressView(value: p) {
+                        Text("Loading model… \(Int(p * 100))%")
+                    }
+                    Text("Keep app foregrounded. iOS suspends the download when the screen locks.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             case .generating(let tokens, _):
                 ProgressView()

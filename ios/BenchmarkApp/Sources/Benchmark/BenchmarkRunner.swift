@@ -3,6 +3,51 @@ import Foundation
 import UIKit
 #endif
 
+/// Holds the iOS background-task assertion + idle-timer override that we
+/// need while a (potentially multi-GB) model is being downloaded. iOS will
+/// suspend a foreground URLSession the moment the screen locks or the app
+/// backgrounds, which silently freezes HF downloads at whatever byte count
+/// they happened to reach. We hold both for the duration of `loadModel`.
+@MainActor
+final class DownloadActivityScope {
+    #if canImport(UIKit)
+    private var bgTask: UIBackgroundTaskIdentifier = .invalid
+    #endif
+
+    init() {
+        #if canImport(UIKit)
+        UIApplication.shared.isIdleTimerDisabled = true
+        bgTask = UIApplication.shared.beginBackgroundTask(withName: "ModelDownload") {
+            // Expiration handler — iOS gave up. Best-effort end.
+            UIApplication.shared.endBackgroundTask(self.bgTask)
+            self.bgTask = .invalid
+        }
+        #endif
+    }
+
+    func end() {
+        #if canImport(UIKit)
+        UIApplication.shared.isIdleTimerDisabled = false
+        if bgTask != .invalid {
+            UIApplication.shared.endBackgroundTask(bgTask)
+            bgTask = .invalid
+        }
+        #endif
+    }
+
+    deinit {
+        #if canImport(UIKit)
+        // Best-effort cleanup if end() wasn't called.
+        Task { @MainActor [bgTask] in
+            UIApplication.shared.isIdleTimerDisabled = false
+            if bgTask != .invalid {
+                UIApplication.shared.endBackgroundTask(bgTask)
+            }
+        }
+        #endif
+    }
+}
+
 /// Orchestrates one benchmark run: load model (if needed), drive a task to completion,
 /// gather memory/thermal samples, and produce a `BenchmarkResult`.
 public actor BenchmarkRunner {
@@ -66,6 +111,9 @@ public actor BenchmarkRunner {
         if currentLoaded != configuration.model.id {
             emit(.loadingModel(progress: 0))
             let loadStart = CFAbsoluteTimeGetCurrent()
+            // Keep iOS from auto-locking + suspending the URLSession mid-download.
+            let scope = await MainActor.run { DownloadActivityScope() }
+            defer { Task { @MainActor in scope.end() } }
             try await configuration.runtime.loadModel(configuration.model) { fraction in
                 Task { await self.emit(.loadingModel(progress: fraction)) }
             }
