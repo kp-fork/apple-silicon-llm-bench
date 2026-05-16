@@ -106,19 +106,19 @@ targets:
     platform: macOS
     deploymentTarget: "15.0"
     sources:
-      # Shared with the iOS app, minus the SwiftUI-only Views layer and the
-      # adapters whose dependency is iOS-only (MediaPipe → SwiftTasksGenAI;
-      # ANEMLL → vendored iOS Anemll source; llama.xcframework → iOS slice).
-      # CoreML adapter is left out of Phase-1 Mac CLI too, because its
-      # CoreMLLLM dependency targets macOS 15+ but we want the Mac CLI
-      # baseline to remain "Phase-1 = MLX only" so the build matches the
-      # SPM `Package.swift` shape exactly.
+      # Shared with the iOS app, minus the SwiftUI-only Views layer.
+      # Each adapter is added back to the Mac target only after its
+      # vendor SDK has been verified to build for macOS.
       - path: Sources/Benchmark
       - path: Sources/Models
       - path: Sources/Runtimes/MLXRuntime.swift
       - path: Sources/Runtimes/MLXBridges.swift
       - path: Sources/Runtimes/HFDownloader.swift
       - path: Sources/Runtimes/LLMRuntime.swift
+      - path: Sources/Runtimes/CoreMLRuntime.swift
+      - path: Sources/Runtimes/ExecuTorchRuntime.swift
+      - path: Sources/Runtimes/LlamaCppRuntime.swift
+      - path: Sources/Runtimes/AnemllRuntime.swift
       - path: ../../apple/YardstickCLI/Sources
     settings:
       base:
@@ -127,6 +127,10 @@ targets:
         ENABLE_USER_SCRIPT_SANDBOXING: NO
         OTHER_LDFLAGS: "-ObjC"
         SKIP_INSTALL: NO
+        # Tool targets can't embed frameworks the way .app bundles do; point
+        # the runtime linker at the xcframework's macOS slice so the
+        # `llama.framework` dylib resolves without `DYLD_FRAMEWORK_PATH`.
+        LD_RUNPATH_SEARCH_PATHS: "$(SRCROOT)/Vendored/llama.xcframework/macos-arm64_x86_64"
     dependencies:
       - package: mlx-swift-lm
         product: MLXLLM
@@ -136,3 +140,23 @@ targets:
         product: HuggingFace
       - package: swift-transformers
         product: Transformers
+      - package: CoreML-LLM
+        product: CoreMLLLM
+      - package: executorch
+        product: executorch
+      - package: executorch
+        product: executorch_llm
+      - package: executorch
+        product: backend_xnnpack
+      - package: executorch
+        product: kernels_llm
+      - package: executorch
+        product: kernels_optimized
+      - package: executorch
+        product: kernels_quantized
+      - package: Anemll
+        product: AnemllCore
+      - framework: Vendored/llama.xcframework
+        embed: false
+        codeSign: false
+        optional: true

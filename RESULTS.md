@@ -31,6 +31,7 @@ Prompt: `"Explain what on-device AI means in simple terms."` (greedy decode, tem
 | mlx-swift  | mlx-community/Qwen3.5-0.8B-MLX-4bit        | Mac M4 Max | macOS 26   | Debug | Q4    |     1.77 |       962 |          24.2 |         82.2 |           614 | nominal | First-token cost dominates on a 0.8B model. Cold load includes MLX kernel JIT. |
 | mlx-swift  | mlx-community/gemma-4-e2b-it-4bit          | Mac M4 Max | macOS 26   | Debug | Q4    |     2.62 |       369 |          60.8 |         60.3 |          2846 | nominal | Larger memory footprint than the 0.8B; decode slightly slower than Qwen 3.5 0.8B as expected. |
 | mlx-swift  | mlx-community/Qwen3.5-2B-MLX-4bit          | Mac M4 Max | macOS 26   | Debug | Q4    |   189.45 |        50 |             — |         78.4 |          1248 | nominal | Outlier load time (warm-cache repro pending); steady-state decode is fast. |
+| llama.cpp  | unsloth/gemma-4-E2B-it-GGUF Q4_K_M         | Mac M4 Max | macOS 26   | Debug | Q4_K_M | 365.97 |        44 |        1249.9 |        118.9 |          3182 | nominal | Same Gemma 4 E2B model as the MLX row above — Metal kernels on M4 Max are ~2× faster decode and ~20× faster prefill than MLX-Swift for this model. Cold load includes the 1.7 GB GGUF download. |
 | mlx-swift  | mlx-community/gemma-4-e4b-it-4bit          | Mac M4 Max | macOS 26   | Debug | Q4    |        — |         — |             — |            — |             — | —       | HF download timed out at ~3.6 GB on the first attempt; will retry. |
 | mlx-swift  | _any_                                      | MacBook Air M3 16 GB | macOS 26 | Debug | Q4 | _wanted_ | _wanted_ | _wanted_ | _wanted_ | _wanted_ | _wanted_ | See [`devices/macbook-air-m3.md`](devices/macbook-air-m3.md). |
 | mlx-swift  | _any_                                      | iPhone 17 Pro | iOS 26   | Release | Q4 | _wanted_ | _wanted_ | _wanted_ | _wanted_ | _wanted_ | _wanted_ | Run via [`ios/BenchmarkApp`](ios/BenchmarkApp). |
@@ -56,6 +57,8 @@ Failure is signal — keep them visible.
 | Runtime    | Model                                | Device     | Result          | Reason |
 |------------|--------------------------------------|------------|-----------------|--------|
 | mlx-swift  | mlx-community/gemma-4-e4b-it-4bit    | Mac M4 Max | Download failed | HuggingFace timeout at ~3.6 GB on first attempt. Retry after network recovery. |
+| coreml-llm | coreml-llm/qwen3.5-0.8b              | Mac M4 Max | Load failed     | `CoreMLLLM` expects the `.mlpackage` at `~/Documents/Models/qwen3.5-0.8b/` — no HF auto-download for the CoreML path. Phase 3 will plumb a downloader. |
+| executorch | executorch-community/Llama-3.2-1B-Instruct-SpinQuant_INT4_EO8-ET | Mac M4 Max | Tokenizer parse error | `tokenizers:hf_tokenizer.cpp:75 — error parsing json file`. The bundled tokenizer.json isn't parseable by the ExecuTorch HF tokenizer build that ships in this branch; needs a separate model with the older tokenizer format. |
 
 ## How to add a row
 

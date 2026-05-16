@@ -132,8 +132,13 @@ struct YardstickApp {
     // MARK: - `yardstick list`
 
     static func listCatalog() {
-        print("Available runtimes (Mac CLI, Phase 1):")
-        print("  mlx-swift  — MLX Swift LM (default)")
+        print("Available runtimes (Mac CLI):")
+        print("  mlx-swift    — MLX Swift LM (default, MLX GPU)")
+        print("  coreml-llm   — CoreML via swift-transformers / CoreMLLLM (ANE / GPU)")
+        print("  executorch   — PyTorch ExecuTorch (XNNPACK / CoreML delegate)")
+        print("  llama-cpp    — llama.cpp via vendored xcframework (CPU + Metal)")
+        print("  anemll       — ANEMLL via vendored anemll-swift-cli (ANE)")
+        print("  litert-lm    — MediaPipe / LiteRT-LM (NOT YET WIRED on Mac)")
         print("")
         print("Available tasks:")
         print("  short-chat   — 128-token reply, measures TTFT + decode tok/s")
@@ -141,10 +146,20 @@ struct YardstickApp {
         print("  sustained    — 512-token generation, watches thermal drift")
         print("  lifecycle    — short generation x N, mimics chat session reuse")
         print("")
-        print("Available models (mlx-swift):")
-        for m in ModelCatalog.mlx {
-            let size = m.onDiskSizeMB.map { "\($0) MB" } ?? "?"
-            print("  \(m.id) — \(m.displayName) (\(m.quantization), ~\(size))")
+        print("Available models per runtime — pass `--model <id-or-hf-repo>`.")
+        for (label, models) in [
+            ("mlx-swift", ModelCatalog.mlx),
+            ("coreml-llm", ModelCatalog.coreML),
+            ("executorch", ModelCatalog.executorch),
+            ("llama-cpp", ModelCatalog.llamaCpp),
+            ("anemll", ModelCatalog.anemll),
+        ] {
+            guard !models.isEmpty else { continue }
+            print("\n  [\(label)]")
+            for m in models {
+                let size = m.onDiskSizeMB.map { "\($0) MB" } ?? "?"
+                print("    \(m.id) — \(m.displayName) (\(m.quantization), ~\(size))")
+            }
         }
     }
 
@@ -154,9 +169,21 @@ struct YardstickApp {
         switch id {
         case "mlx-swift", "mlx":
             return MLXRuntime()
+        case "coreml-llm", "coreml":
+            return CoreMLRuntime()
+        case "executorch", "et":
+            return ExecuTorchRuntime()
+        case "llama-cpp", "llama.cpp", "llamacpp":
+            return LlamaCppRuntime()
+        case "anemll":
+            return AnemllRuntime()
+        case "litert-lm", "mediapipe":
+            throw CLIError.invalidArgument(
+                "runtime 'litert-lm' is not wired up in the Mac CLI yet: paescebu/SwiftTasksGenAI requires adding via Xcode UI and its macOS xcframework slice has not been verified."
+            )
         default:
             throw CLIError.invalidArgument(
-                "runtime '\(id)' not wired up in the Mac CLI yet — Phase 1 supports only 'mlx-swift'"
+                "unknown runtime '\(id)' — supported on Mac: mlx-swift, coreml-llm, executorch, llama-cpp, anemll"
             )
         }
     }

@@ -7,13 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A5B1C0000026130BB11B5BE /* kernels_llm in Frameworks */ = {isa = PBXBuildFile; productRef = F2F2A8942501B44FD74F06D0 /* kernels_llm */; };
+		0B84BFD4FD22D8DD7E67E04E /* kernels_optimized in Frameworks */ = {isa = PBXBuildFile; productRef = 94E0BEAFA16C6763A28522EB /* kernels_optimized */; };
 		0F82181CAC39B256ECB79580 /* BenchmarkTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59D10CD171A7FE9EF1BB369F /* BenchmarkTask.swift */; };
 		100A9D75956A32FC2BA2C1F2 /* BenchmarkResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6CAC41B79737975D3977D7 /* BenchmarkResult.swift */; };
 		112E2A29A4EEA42B9F7D6444 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1E86895F4C4C799B493D115C /* Assets.xcassets */; };
+		1DE99C97463A3023A68C459C /* AnemllCore in Frameworks */ = {isa = PBXBuildFile; productRef = F472A90A338D866AA59AA6CC /* AnemllCore */; };
 		233E07CCDFD38F03A7808A08 /* BenchmarkResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6CAC41B79737975D3977D7 /* BenchmarkResult.swift */; };
 		235129CA3670027E3887200D /* BenchmarkTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59D10CD171A7FE9EF1BB369F /* BenchmarkTask.swift */; };
+		23EE8DBC664CEB898C2405B1 /* CoreMLLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 1FD8537D6751D093C80921A9 /* CoreMLLLM */; };
 		26A60402AE5BEF83F2FDAA7D /* LlamaCppRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F54149AFF1D39F2B9377885 /* LlamaCppRuntime.swift */; };
 		296689A741B674A7612FC0ED /* SustainedGenerationTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDC21ED32AE3215BD9BAB3DC /* SustainedGenerationTask.swift */; };
+		2DCF41D723588916BF29D8F0 /* executorch in Frameworks */ = {isa = PBXBuildFile; productRef = 10A02929ED5A1A7DF466BDD6 /* executorch */; };
 		2E8B509B84C74A6A850BF4D4 /* LLMRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42CEC963B0C412A01CB78853 /* LLMRuntime.swift */; };
 		2EC1A49EB3F96A59AD0345D1 /* HFDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5235B8E78B06C2870291FF5 /* HFDownloader.swift */; };
 		3265BD866E12254B5F9D02D5 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6340DF01289DE1C8F23AA39 /* AboutView.swift */; };
@@ -29,6 +34,8 @@
 		4C7A81F47EB282F5B3B84166 /* ThermalMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DBDFD928C557A5352D613E /* ThermalMonitor.swift */; };
 		4D5CECB4C50714A3B928F66C /* AnemllRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BF89FC5DAB913F5DC74C99 /* AnemllRuntime.swift */; };
 		52F23D827122805FEDBBDA29 /* DeviceSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6978D6BB9139052EA83F5605 /* DeviceSnapshot.swift */; };
+		531015CDC40AD8F9995AE7F7 /* AnemllRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BF89FC5DAB913F5DC74C99 /* AnemllRuntime.swift */; };
+		584FCFB61598A0F55B3649E2 /* ExecuTorchRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1FDA1BD8CFFB6E92798B22 /* ExecuTorchRuntime.swift */; };
 		59BA60639CE894516CE31D7A /* CoreMLLLM in Frameworks */ = {isa = PBXBuildFile; productRef = E5271977FC951DC7C5EA72BD /* CoreMLLLM */; };
 		5D0D63767498D8542E2AED3D /* LongContextTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCADC364D9871831E17D1318 /* LongContextTask.swift */; };
 		5E44451A3DDE595221C1D747 /* HuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = 1946F8E2583DCE11CFEA7AD8 /* HuggingFace */; };
@@ -56,11 +63,14 @@
 		9CF9A0FAC7BDA40ADA7B7D86 /* ThermalMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DBDFD928C557A5352D613E /* ThermalMonitor.swift */; };
 		9E7D44C95CD1FFE50638B1BF /* AppLifecycleTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1124C321F63E5E0AEEF8902E /* AppLifecycleTask.swift */; };
 		9FB0903D22C954FDEB555847 /* ResultStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7B6B97C8F1331B7F122CF4 /* ResultStore.swift */; };
+		A015EE7A7A064B865CF498FD /* executorch_llm in Frameworks */ = {isa = PBXBuildFile; productRef = 29AE3D43BC5F40FBC1105806 /* executorch_llm */; };
 		A09211745827F71359B56AF8 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B1EE778237E01ED0945D4AE /* HistoryView.swift */; };
 		A90EA00E6A6DB24DE1E8ABBE /* EnergyMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8646DFD32712FBAAEB72156D /* EnergyMonitor.swift */; };
+		B3236EC37B1CE4074B972226 /* kernels_quantized in Frameworks */ = {isa = PBXBuildFile; productRef = 5E734E7640926D7B17DD6CC4 /* kernels_quantized */; };
 		BCA6E27341892C066E7C17AB /* executorch_llm in Frameworks */ = {isa = PBXBuildFile; productRef = 42211F46508DC5E51996CB45 /* executorch_llm */; };
 		BE6487CEF4C49373288701CC /* Yardstick.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C8A95BC024A5299976FB3A /* Yardstick.swift */; };
 		C3077165679D541B3891953F /* RunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5119926653436F65E0C37EB /* RunView.swift */; };
+		CCB176ACF070E9D1D8D4C50A /* backend_xnnpack in Frameworks */ = {isa = PBXBuildFile; productRef = 08015CC1FD43865B1B801A53 /* backend_xnnpack */; };
 		CCB3F0B9B7883B6C0119253C /* backend_xnnpack in Frameworks */ = {isa = PBXBuildFile; productRef = 6AE7DCD576FA9CBF8CFF3AA8 /* backend_xnnpack */; };
 		CE55A5633E945419992D1CC8 /* SustainedGenerationTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDC21ED32AE3215BD9BAB3DC /* SustainedGenerationTask.swift */; };
 		D2F11BBCDAC07C3A8753D1E2 /* HFDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5235B8E78B06C2870291FF5 /* HFDownloader.swift */; };
@@ -69,6 +79,9 @@
 		DBE501DF7CCED67DB12B58B5 /* kernels_optimized in Frameworks */ = {isa = PBXBuildFile; productRef = 8B81C5E8FC5F3CAD804883A7 /* kernels_optimized */; };
 		E3720048DBF575F5136F3EA8 /* MLXBridges.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB25DA3940385A8468CDF86C /* MLXBridges.swift */; };
 		E89444AEBDBF1290A74FE5D7 /* HuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = E1EE00212151957A2CF0EA1A /* HuggingFace */; };
+		EC039C8FC4A2DF68CE274F17 /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = B39105E2687FD536226E700E /* llama.xcframework */; };
+		F4803995ED52DD8969723131 /* CoreMLRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 571463D6F5C7502E074043E5 /* CoreMLRuntime.swift */; };
+		F988FED25E1B2247D3B696D8 /* LlamaCppRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F54149AFF1D39F2B9377885 /* LlamaCppRuntime.swift */; };
 		FA911A2CDFA67C2099693800 /* ModelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5883E0764831A0D390331F81 /* ModelCatalog.swift */; };
 		FC109CE8470E795A439D5F24 /* BenchmarkApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4731FE59D60EC52D5D775053 /* BenchmarkApp.swift */; };
 		FCB55FD5BA55D670179B2DD0 /* Transformers in Frameworks */ = {isa = PBXBuildFile; productRef = F096C2521A8E6BB4A3275B51 /* Transformers */; };
@@ -138,6 +151,15 @@
 				7441EE04A6771C964FFBBE63 /* MLXLMCommon in Frameworks */,
 				5E44451A3DDE595221C1D747 /* HuggingFace in Frameworks */,
 				FCB55FD5BA55D670179B2DD0 /* Transformers in Frameworks */,
+				23EE8DBC664CEB898C2405B1 /* CoreMLLLM in Frameworks */,
+				2DCF41D723588916BF29D8F0 /* executorch in Frameworks */,
+				A015EE7A7A064B865CF498FD /* executorch_llm in Frameworks */,
+				CCB176ACF070E9D1D8D4C50A /* backend_xnnpack in Frameworks */,
+				0A5B1C0000026130BB11B5BE /* kernels_llm in Frameworks */,
+				0B84BFD4FD22D8DD7E67E04E /* kernels_optimized in Frameworks */,
+				B3236EC37B1CE4074B972226 /* kernels_quantized in Frameworks */,
+				1DE99C97463A3023A68C459C /* AnemllCore in Frameworks */,
+				EC039C8FC4A2DF68CE274F17 /* llama.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -339,6 +361,14 @@
 				01FA12B5AFE994F6E0A44BB4 /* MLXLMCommon */,
 				1946F8E2583DCE11CFEA7AD8 /* HuggingFace */,
 				F096C2521A8E6BB4A3275B51 /* Transformers */,
+				1FD8537D6751D093C80921A9 /* CoreMLLLM */,
+				10A02929ED5A1A7DF466BDD6 /* executorch */,
+				29AE3D43BC5F40FBC1105806 /* executorch_llm */,
+				08015CC1FD43865B1B801A53 /* backend_xnnpack */,
+				F2F2A8942501B44FD74F06D0 /* kernels_llm */,
+				94E0BEAFA16C6763A28522EB /* kernels_optimized */,
+				5E734E7640926D7B17DD6CC4 /* kernels_quantized */,
+				F472A90A338D866AA59AA6CC /* AnemllCore */,
 			);
 			productName = yardstick;
 			productReference = 3D1A95AD68FB592E643E5CD3 /* yardstick */;
@@ -439,14 +469,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				531015CDC40AD8F9995AE7F7 /* AnemllRuntime.swift in Sources */,
 				802E92307B6E8145D1143425 /* AppLifecycleTask.swift in Sources */,
 				100A9D75956A32FC2BA2C1F2 /* BenchmarkResult.swift in Sources */,
 				FDB9A3ACB956F700E71E93E4 /* BenchmarkRunner.swift in Sources */,
 				235129CA3670027E3887200D /* BenchmarkTask.swift in Sources */,
+				F4803995ED52DD8969723131 /* CoreMLRuntime.swift in Sources */,
 				87EB333EA85EDBC955A75984 /* DeviceSnapshot.swift in Sources */,
 				A90EA00E6A6DB24DE1E8ABBE /* EnergyMonitor.swift in Sources */,
+				584FCFB61598A0F55B3649E2 /* ExecuTorchRuntime.swift in Sources */,
 				D2F11BBCDAC07C3A8753D1E2 /* HFDownloader.swift in Sources */,
 				2E8B509B84C74A6A850BF4D4 /* LLMRuntime.swift in Sources */,
+				F988FED25E1B2247D3B696D8 /* LlamaCppRuntime.swift in Sources */,
 				5D0D63767498D8542E2AED3D /* LongContextTask.swift in Sources */,
 				934F49A4C07A710BCD246052 /* MLXBridges.swift in Sources */,
 				809989CAEFAD0B15B307469C /* MLXRuntime.swift in Sources */,
@@ -597,10 +631,11 @@
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				LD_RUNPATH_SEARCH_PATHS = (
+				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/../Frameworks",
+					"\"Vendored\"",
 				);
+				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Vendored/llama.xcframework/macos-arm64_x86_64";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.iosllmbenchmark.yardstick;
@@ -701,10 +736,11 @@
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				LD_RUNPATH_SEARCH_PATHS = (
+				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/../Frameworks",
+					"\"Vendored\"",
 				);
+				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Vendored/llama.xcframework/macos-arm64_x86_64";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.iosllmbenchmark.yardstick;
@@ -803,10 +839,30 @@
 			package = 222066378580FE50F7021006 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
 			productName = MLXLMCommon;
 		};
+		08015CC1FD43865B1B801A53 /* backend_xnnpack */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6ABDBD1AD4883A8815094867 /* XCRemoteSwiftPackageReference "executorch" */;
+			productName = backend_xnnpack;
+		};
+		10A02929ED5A1A7DF466BDD6 /* executorch */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6ABDBD1AD4883A8815094867 /* XCRemoteSwiftPackageReference "executorch" */;
+			productName = executorch;
+		};
 		1946F8E2583DCE11CFEA7AD8 /* HuggingFace */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 80DD55C85D3764D0D34ECC4E /* XCRemoteSwiftPackageReference "swift-huggingface" */;
 			productName = HuggingFace;
+		};
+		1FD8537D6751D093C80921A9 /* CoreMLLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7552D4AA4A5594B14633A05C /* XCRemoteSwiftPackageReference "CoreML-LLM" */;
+			productName = CoreMLLLM;
+		};
+		29AE3D43BC5F40FBC1105806 /* executorch_llm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6ABDBD1AD4883A8815094867 /* XCRemoteSwiftPackageReference "executorch" */;
+			productName = executorch_llm;
 		};
 		41522D438C797371055C13FC /* Transformers */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -823,6 +879,11 @@
 			package = 6ABDBD1AD4883A8815094867 /* XCRemoteSwiftPackageReference "executorch" */;
 			productName = executorch_llm;
 		};
+		5E734E7640926D7B17DD6CC4 /* kernels_quantized */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6ABDBD1AD4883A8815094867 /* XCRemoteSwiftPackageReference "executorch" */;
+			productName = kernels_quantized;
+		};
 		5EDC2498FDF127EF2101F26B /* MLXLMCommon */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 222066378580FE50F7021006 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
@@ -834,6 +895,11 @@
 			productName = backend_xnnpack;
 		};
 		8B81C5E8FC5F3CAD804883A7 /* kernels_optimized */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6ABDBD1AD4883A8815094867 /* XCRemoteSwiftPackageReference "executorch" */;
+			productName = kernels_optimized;
+		};
+		94E0BEAFA16C6763A28522EB /* kernels_optimized */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 6ABDBD1AD4883A8815094867 /* XCRemoteSwiftPackageReference "executorch" */;
 			productName = kernels_optimized;
@@ -871,6 +937,15 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3CA1B107F9BEE92DC4D9485E /* XCRemoteSwiftPackageReference "swift-transformers" */;
 			productName = Transformers;
+		};
+		F2F2A8942501B44FD74F06D0 /* kernels_llm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6ABDBD1AD4883A8815094867 /* XCRemoteSwiftPackageReference "executorch" */;
+			productName = kernels_llm;
+		};
+		F472A90A338D866AA59AA6CC /* AnemllCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AnemllCore;
 		};
 		F5E45AD0A479F8152D251911 /* executorch */ = {
 			isa = XCSwiftPackageProductDependency;
