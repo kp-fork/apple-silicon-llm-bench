@@ -19,20 +19,39 @@ Quality bar for the numbers in this file:
 | **Device state** | Plugged in, "High Power" mode, idle desktop, Activity Monitor sampling off. Thermals stayed `nominal` for every Task A row. |
 | **What we do NOT trust yet** | Prefill tok/s on a 7-word prompt is dominated by per-call overhead — read it as a smoke test, not a benchmark, until Task B (`long-context`) rows land. CoreMLLLM's streaming API doesn't surface a prefill counter, so its prefill column is blank. |
 
-## At-a-glance — Task A, M4 Max, Gemma 4 E2B, `n = 3` (median)
+## At-a-glance — Task A, M4 Max
 
-| Runtime | TTFT (ms) | Decode tok/s | Prefill tok/s | Peak Mem (MB) | Cold load (s) |
-|---|---:|---:|---:|---:|---:|
-| mlx-swift | 100 | 56.6 | 306.4 | 2833 | 2.7 |
-| **llama.cpp (Q4_K_M)** | **43** | **119.6** | 1465.4 | 3168 | 1.7 |
-| **coreml-llm (INT4 palettized)** | 616 | 33.0 | — | **1052** | 4.5 |
+### Gemma 4 E2B (2 B params), `n = 3` median per runtime
 
-Reading guide for this row, which is the only fully apples-to-apples cell in the table:
+| Runtime | TTFT (ms) | Decode tok/s | Prefill tok/s | Peak Mem (MB) |
+|---|---:|---:|---:|---:|
+| mlx-swift (Q4) | 100 | 56.6 | 306.4 | 2833 |
+| **llama.cpp (Q4_K_M)** | **43** | **119.6** | 1465.4 | 3168 |
+| **coreml-llm (INT4 palettized)** | 616 | 33.0 | — | **1052** |
 
-- **llama.cpp Metal wins decode by ~2.0× over MLX-Swift (119.6 vs 56.6 tok/s)** and ~3.6× over CoreML/ANE on Apple M4 Max for Gemma 4 E2B.
-- **CoreML/ANE wins peak memory by ~2.7× over MLX-Swift (1052 vs 2833 MB)** and ~3.0× over llama.cpp (1052 vs 3168 MB). The ANE residency model keeps weights out of the GPU working set.
-- llama.cpp also has the lowest TTFT (43 ms vs 100 ms vs 616 ms). CoreML's TTFT includes ANE compile / chunk load on first token.
-- Per-iteration spreads on this median: TTFT span 369→84→100 (MLX, cold→warm→warm) / 44→43→39 (llama.cpp) / 642→616→614 (CoreML). The first MLX run is the only outlier — it pays an additional kernel JIT cost.
+- **llama.cpp Metal wins decode by ~2.1× over MLX-Swift** and ~3.6× over CoreML/ANE.
+- **CoreML/ANE wins peak memory by ~2.7× over MLX-Swift** and ~3.0× over llama.cpp.
+- llama.cpp also has the lowest TTFT. CoreML's TTFT includes ANE compile / chunk load on first token.
+
+### Gemma 4 E4B (4 B params), `n = 1` per runtime
+
+| Runtime | TTFT (ms) | Decode tok/s | Prefill tok/s | Peak Mem (MB) |
+|---|---:|---:|---:|---:|
+| **mlx-swift (Q4)** | **114** | **45.2** | **239.7** | **4417** |
+| llama.cpp (Q4_K_M) | 162 | 40.65 | 104.4 | 5092 |
+| coreml-llm | _not run_ | _not run_ | _not run_ | _not run_ |
+
+**The ranking inverts at the larger size.** llama.cpp's E4B decode is **0.90× MLX's** (40.65 vs 45.2 tok/s), undoing the 2.1× lead it had at E2B. Same prompt, same device, same task — only the model parameter count changed. Don't extrapolate runtime choice from one model size to another without measuring.
+
+### Per-iteration spread (Gemma 4 E2B, three runs each)
+
+| Runtime | Decode run 1 | Decode run 2 | Decode run 3 |
+|---|---:|---:|---:|
+| mlx-swift | 60.3 | 56.6 | 51.8 |
+| llama.cpp | 118.9 | 119.6 | 120.5 |
+| coreml-llm | 32.8 | 32.9 | 33.0 |
+
+llama.cpp and CoreML are extremely tight (sub-1% spread on the same warm run). MLX's first run pays an additional kernel JIT cost, then converges.
 
 ---
 
@@ -50,13 +69,22 @@ Reading guide for this row, which is the only fully apples-to-apples cell in the
 
 ### Gemma 4 E4B  (Mac M4 Max, macOS 26, short-chat)
 
-`n = 1` per runtime.
+`n = 1` per runtime. The runtime ranking reverses vs Gemma 4 E2B — see "Cross-size observations" below.
 
 | Runtime | Quant | Load (s) | TTFT (ms) | Prefill tok/s | Decode tok/s | Peak Mem (MB) | Notes |
 |---|---|---:|---:|---:|---:|---:|---|
-| mlx-swift | Q4 | 1129.7 | 114 | 239.7 | 45.2 | 4417 | Load dominated by 5.2 GB cold download (third-attempt retry). Decode drops 60 → 45 tok/s vs E2B. |
-| llama.cpp (Q4_K_M) | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | Running in background; see commit log. |
+| **mlx-swift** | Q4 | 1129.7 | **114** | **239.7** | **45.2** | **4417** | Load dominated by 5.2 GB cold download (third-attempt retry). Decode drops 60 → 45 tok/s vs E2B. |
+| llama.cpp (GGUF) | Q4_K_M | 530.8 | 162 | 104.4 | 40.65 | 5092 | Load dominated by 3.3 GB cold download. Slower decode than MLX on this model. |
 | coreml-llm | _not run_ | — | — | — | — | — | 5.5 GB cold download deferred to a future session. |
+
+**Cross-size observations** (E2B vs E4B, MLX vs llama.cpp on the same M4 Max):
+
+|   | MLX decode | llama.cpp decode | llama.cpp / MLX |
+|---|---:|---:|---:|
+| Gemma 4 E2B (2 B) | 56.6 tok/s | 119.6 tok/s | **2.11×** |
+| Gemma 4 E4B (4 B) | 45.2 tok/s | 40.65 tok/s | **0.90×** |
+
+llama.cpp's Metal kernels are decisively faster on the 2 B model and slightly slower on the 4 B. The gap doesn't just compress — it inverts. The same is visible in prefill (E2B llama.cpp 1465 vs MLX 306; E4B llama.cpp 104 vs MLX 240) and in peak memory (E2B llama.cpp 3168 vs MLX 2833; E4B llama.cpp 5092 vs MLX 4417 — MLX is leaner at both sizes, but the spread widens on the 4 B). Read as: "runtime advantage depends on the model size, not just the runtime". Don't extrapolate either direction without measuring.
 
 ### Qwen 3.5 0.8B  (Mac M4 Max, macOS 26, short-chat)
 
@@ -106,7 +134,9 @@ Decode tok/s drops monotonically with parameter count once you skip past the sma
 | Model | Params (B) | Quant | TTFT (ms) | Decode tok/s | Peak Mem (MB) | n |
 |---|---:|---|---:|---:|---:|---:|
 | Gemma 4 E2B (GGUF) | 2 | Q4_K_M | 43 | 119.6 | 3168 | 3 |
-| Gemma 4 E4B (GGUF) | 4 | Q4_K_M | _pending_ | _pending_ | _pending_ | 0 |
+| Gemma 4 E4B (GGUF) | 4 | Q4_K_M | 162 | 40.65 | 5092 | 1 |
+
+Within the same model family (Gemma 4), llama.cpp decode drops ~2.9× from E2B to E4B — sharper than MLX's 1.3× drop on the same family. Read as: llama.cpp Metal kernels are tuned for the smaller-model regime on this device.
 
 ### `coreml-llm`  (Mac M4 Max, macOS 26, short-chat)
 
@@ -138,6 +168,7 @@ This is the unfiltered source table. Use Pivots 1 and 2 above for analysis; this
 | coreml-llm | Gemma 4 E2B | INT4 palettized | 1 | 854.5 | 642 | — | 32.8 | 1067 | `m4max-coreml-gemma-4-e2b-short-chat.jsonl` |
 | coreml-llm | Gemma 4 E2B | INT4 palettized | 2 | 4.5 | 616 | — | 32.9 | 1052 | `m4max-coreml-gemma-4-e2b-short-chat-run2.jsonl` |
 | coreml-llm | Gemma 4 E2B | INT4 palettized | 3 | 4.1 | 614 | — | 33.0 | 1055 | `m4max-coreml-gemma-4-e2b-short-chat-run3.jsonl` |
+| llama.cpp | Gemma 4 E4B (GGUF) | Q4_K_M | 1 | 530.8 | 162 | 104.4 | 40.65 | 5092 | `m4max-llama-cpp-gemma-4-e4b-short-chat-run1.jsonl` |
 
 ---
 
