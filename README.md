@@ -1,126 +1,114 @@
-# iOS On-device LLM Benchmark
+# Yardstick
 
-A practical benchmark for running local LLMs on iPhone.
+**Apple Silicon AI Benchmark — Mac + iPhone + iPad.**
 
-This project compares **MLX Swift, llama.cpp, CoreML (swift-transformers), MediaPipe / LiteRT-LM, ExecuTorch, and ANEMLL** under real iOS app constraints.
+A neutral, reproducible benchmark for running local LLMs (and, in time, ASR / TTS) on Apple Silicon. Compares **MLX Swift, llama.cpp, CoreML (swift-transformers), MediaPipe / LiteRT-LM, ExecuTorch, ANEMLL** — and Apple's own Foundation Models — under real device constraints, not just `tok/s` on a server.
 
-Instead of focusing only on raw tokens/sec, this benchmark also tracks **memory usage, app/package size, model loading time, thermal behavior, energy per token, app lifecycle stability, streaming, cancellation, and integration difficulty**.
+> Originally `ios-llm-benchmark`. Renamed in May 2026 once the harness grew to cover Mac as a first-class target alongside iPhone / iPad.
 
-The goal is simple:
+## What gets measured
 
-> Which local LLM runtime is actually practical for shipping inside an iOS app?
+Per `(runtime, model, device, build)` tuple:
 
-## Status
+- **Speed** — TTFT, prefill `tok/s`, decode `tok/s`, sustained-decode drift over 512+ tokens.
+- **Memory** — baseline, peak during decode, after-generation.
+- **Thermal** — initial / peak / final state across the run.
+- **Energy** — joules per token where the battery-step API gives a useful signal.
+- **Lifecycle** — survives background → foreground, cancellation latency, streaming.
+- **Quality** *(roadmap)* — WER / CER for ASR, perplexity / MMLU for LLM, byte-identical comparison vs Python references.
 
-The included iOS app (`ios/BenchmarkApp`) builds cleanly for iOS 18 and integrates **all six** runtimes end-to-end:
+Methodology lives under [`methodology/`](methodology/). The numbers we publish follow [`methodology/fairness-rules.md`](methodology/fairness-rules.md).
+
+## Project shape
+
+```
+Yardstick/
+├── Package.swift              SPM: YardstickKit library + `yardstick` Mac CLI
+├── apple/
+│   └── YardstickCLI/          Mac command-line runner
+├── ios/
+│   └── BenchmarkApp/          On-device iOS app (`.xcodeproj`)
+├── runtimes/                  Per-runtime notes (adapters, gotchas, version pins)
+├── devices/                   Per-device pages (chip, RAM, OS, build, signing)
+├── methodology/               How we measure each axis fairly
+├── models/                    Curated model catalog
+├── prompts/                   Standardized prompts per task
+└── results/
+    ├── raw/                   JSONL dumps per run
+    └── (summary tables generated into RESULTS.md)
+```
+
+## Running on Mac (CLI)
+
+> **Current status (May 2026)**: SPM build is clean. Runtime is blocked by [`ml-explore/mlx-swift#349`](https://github.com/ml-explore/mlx-swift/issues/349) — the MLX Metal kernel bundle isn't emitted by `swift build` from a downstream package, so `swift run yardstick run …` exits with `Failed to load the default metallib`. The same workaround applies to `mlx-swift-examples/llm-tool` (its README says "Build the llm-tool scheme in Xcode"). A macOS app target that wraps the CLI through Xcode's Metal toolchain is queued as Phase 2.
+
+When the Phase-2 macOS target lands, this is the intended shape:
+
+```sh
+$ yardstick list
+$ yardstick run --task short-chat \
+                --runtime mlx-swift \
+                --model mlx-community/Qwen3-0.6B-4bit \
+                --output results/raw/m4max-mlx-qwen3-0.6b.jsonl
+```
+
+For now, build verification only:
+
+```sh
+$ swift build       # Build complete!
+```
+
+## Running on iPhone (app)
+
+```sh
+cd ios/BenchmarkApp
+./scripts/bootstrap.sh           # downloads llama.xcframework + Anemll source
+open BenchmarkApp.xcodeproj      # set your Team in Signing & Capabilities
+                                 # ⌘R on a connected iPhone
+```
+
+First launch downloads the chosen model (default: `mlx-community/gemma-4-e2b-it-4bit`, ~1.3 GB) into the app's Documents directory. Use the picker to swap.
 
 | Runtime | Adapter | Wire-up |
 |---|---|---|
 | MLX Swift | `MLXRuntime.swift` | SPM (`mlx-swift-lm`) |
-| llama.cpp | `LlamaCppRuntime.swift` | vendored `llama.xcframework` (downloaded by `bootstrap.sh`) |
+| llama.cpp | `LlamaCppRuntime.swift` | vendored `llama.xcframework` (`bootstrap.sh`) |
 | CoreML (swift-transformers) | `CoreMLRuntime.swift` | SPM (`swift-transformers` `Models` + `Generation`) |
 | MediaPipe / LiteRT-LM | `MediaPipeRuntime.swift` | `canImport`-gated; add `paescebu/SwiftTasksGenAI` via Xcode UI |
-| ExecuTorch | `ExecuTorchRuntime.swift` | SPM (`pytorch/executorch` swiftpm-* branch) |
-| ANEMLL | `AnemllRuntime.swift` | local SPM via vendored `Anemll/` (cloned by `bootstrap.sh`) |
+| ExecuTorch | `ExecuTorchRuntime.swift` | SPM (`pytorch/executorch` `swiftpm-*` branch) |
+| ANEMLL | `AnemllRuntime.swift` | local SPM via vendored `Anemll/` (`bootstrap.sh`) |
 
-All adapters are real implementations — nothing is stubbed. Adapters whose framework is not yet present in the build are gated with `#if canImport(...)` so they fall back to a clear "not added" error rather than failing the build.
+Adapters whose framework isn't present at build time are gated with `#if canImport(...)` and fall back to a clear "not added" error rather than failing the build.
 
-## Quick start (run on your iPhone)
+## Devices
 
-```bash
-# 1. fetch the binary deps (llama.xcframework, Anemll source)
-cd ios/BenchmarkApp
-./scripts/bootstrap.sh
+Verified in-tree:
 
-# 2. open and run
-open BenchmarkApp.xcodeproj
-# Set your Team in Signing & Capabilities, select your iPhone, ⌘R
-```
+- [`devices/mac-m4-max.md`](devices/mac-m4-max.md) — Apple M4 Max (macOS 26)
+- [`devices/macbook-air-m3.md`](devices/macbook-air-m3.md) — MacBook Air M3, 16 GB (macOS 26)
+- [`devices/iphone-17-pro.md`](devices/iphone-17-pro.md) — iPhone 17 Pro (iOS 26)
 
-The `BenchmarkApp.xcodeproj` is committed — no `xcodegen` install required for normal use. (If you edit `project.yml` to add a runtime or change build settings, install `brew install xcodegen` and run `REGEN_XCODEPROJ=1 ./scripts/bootstrap.sh`.)
+**Community devices wanted.** If you have an Apple Silicon device not listed above, the fastest way to contribute a row to `RESULTS.md` is to:
 
-First launch downloads the default model (`mlx-community/gemma-4-e2b-it-4bit`, ~1.3 GB) into the app's Documents directory. Use the picker to swap to any other model from the per-runtime catalog.
+1. Add a `devices/<your-device>.md` describing the hardware/OS/build.
+2. Run the app or CLI per [`methodology/measurement.md`](methodology/measurement.md).
+3. PR the resulting `results/raw/<device>-*.jsonl` and the updated `RESULTS.md` rows.
 
-To enable the **MediaPipe / LiteRT-LM** runtime (optional):
+Devices we'd love numbers for:
 
-1. In Xcode → File → Add Package Dependencies…
-2. URL: `https://github.com/paescebu/SwiftTasksGenAI`
-3. Add `SwiftTasksGenAI` to the `BenchmarkApp` target.
-4. Rebuild — the `#if canImport(MediaPipeTasksGenAI)` block lights up.
+- iPhone 15 Pro / 16 Pro / 17 Pro Max / 17 Air
+- iPad Pro M2 / M4
+- MacBook Pro M1 / M2 / M3 / M4 (Pro / Max)
+- Mac Studio Ultra (M2 Ultra / M3 Ultra)
+- Mac mini M2 / M4
 
-## Benchmark metrics
+## Roadmap
 
-For every run we record:
-
-- **Performance** — model load time, time-to-first-token, prefill tok/s, decode tok/s, total time
-- **Memory** — baseline, after model load, peak during decode, after generation (`task_info` resident size)
-- **Thermal** — `ProcessInfo.thermalState` initial/peak/final + decode-rate degradation curve
-- **Energy** — joules used and **joules per generated token**, derived from battery-level delta × per-device pack capacity (see [methodology/energy.md](methodology/energy.md))
-- **Storage** — app binary delta, model file size, total installed footprint
-- **Lifecycle** — cancellation latency, background/foreground recovery (Task D)
-- **Integration** — Swift API quality, build complexity, App Store practicality (scored separately, never folded into raw numbers)
-
-## Default model: Gemma 4 E2B
-
-Recent releases of Gemma 4 (E2B / E4B) target on-device deployment specifically and are well-supported across MLX and llama.cpp. The other runtimes default to the strongest model their format ecosystem currently publishes:
-
-| Runtime | Default model | Format |
-|---|---|---|
-| MLX Swift | `mlx-community/gemma-4-e2b-it-4bit` | MLX safetensors |
-| llama.cpp | `unsloth/gemma-4-E2B-it-GGUF` | GGUF Q4_K_M |
-| CoreML (swift-transformers) | `smpanaro/Llama-3.2-1B-Instruct-CoreML` | `.mlpackage` (no Gemma 4 .mlpackage published yet) |
-| MediaPipe | `litert-community/Gemma3-1B-IT` | `.task` (Gemma 4 ships only as `.litertlm`, not yet loadable in MediaPipeTasksGenAI 0.10.x) |
-| ExecuTorch | `executorch-community/Llama-3.2-1B-Instruct-SpinQuant_INT4_EO8-ET` | `.pte` (no official Gemma 4 .pte) |
-| ANEMLL | `anemll/anemll-google-gemma-3-1b-it-ctx4096_0.3.5` | multi-`.mlmodelc` ANE bundle |
-
-Model coverage gaps are documented per runtime in [`runtimes/`](runtimes/).
-
-## Sample result table
-
-The README will be updated as real numbers come in. Until then, this is the schema:
-
-| Runtime | Model | Device | Quant | Load (s) | TTFT (ms) | Decode tok/s | Peak Mem (MB) | J/token | Thermal |
-|---|---|---|---|---:|---:|---:|---:|---:|---|
-| MLX Swift | Gemma 4 E2B 4-bit | iPhone 17 Pro | Q4 | TBD | TBD | TBD | TBD | TBD | nominal |
-| llama.cpp | Gemma 4 E2B Q4_K_M | iPhone 17 Pro | Q4_K_M | TBD | TBD | TBD | TBD | TBD | nominal |
-| CoreML | Llama 3.2 1B | iPhone 17 Pro | mixed | TBD | TBD | TBD | TBD | TBD | nominal |
-| MediaPipe | Gemma 3 1B | iPhone 17 Pro | INT4 | TBD | TBD | TBD | TBD | TBD | nominal |
-| ExecuTorch | Llama 3.2 1B SpinQuant | iPhone 17 Pro | INT4 | TBD | TBD | TBD | TBD | TBD | nominal |
-| ANEMLL (ANE) | Gemma 3 1B | iPhone 17 Pro | Q4 | TBD | TBD | TBD | TBD | TBD | nominal |
-
-Filled-in results live in [`RESULTS.md`](RESULTS.md) and [`results/`](results/).
-
-## What this benchmark does **not** do
-
-- Does **not** rank model intelligence (use MMLU, GSM8K, MT-Bench for that)
-- Does **not** benchmark server inference
-- Does **not** compare a 4-bit GGUF and an FP16 CoreML model as if they were the same thing
-- Does **not** hide failures — out-of-memory, crashes, and unsupported context lengths stay in the table
-- Does **not** focus on Android in the initial version
-
-## Repository layout
-
-```
-ios-llm-benchmark/
-├── README.md, DESIGN.md, RESULTS.md
-├── devices/      one .md per phone we test on
-├── runtimes/     one .md per runtime we evaluate (integration notes + caveats)
-├── models/       one .md per model family
-├── prompts/      the four fixed benchmark prompts
-├── methodology/  measurement, fairness, thermal, memory, energy definitions
-├── results/      raw/ JSON dumps, summary/ generated tables
-└── ios/          on-device benchmark app (XcodeGen project)
-```
-
-## Contributing
-
-Real measurements from real devices are the most valuable contribution. To submit a result:
-
-1. Run the iOS app on your device, open a result, hit the share button.
-2. AirDrop or share the JSON to your Mac.
-3. Drop it into `results/raw/`.
-4. Open a PR. Please include the device, iOS version, build configuration, and whether the device was charging / in low-power mode.
+- **Phase 1** *(this release)* — repo rename, top-level SPM (`YardstickKit` + `yardstick` CLI), Mac CLI builds clean, README + device pages, methodology docs, iOS app intact.
+- **Phase 2** — Mac CLI runs end-to-end (via Xcode-built target to sidestep mlx-swift #349), first M4 Max + MacBook Air M3 numbers committed to `RESULTS.md`.
+- **Phase 3** — quality / accuracy tasks: WER + CER (reusing `swift-transformers` Whisper normalizer), perplexity, MMLU subset. ASR + TTS adapters (WhisperKit, Apple Speech, system TTS).
+- **Phase 4** — public results dashboard, regeneration CI, comparison plots.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [`LICENSE`](LICENSE).
