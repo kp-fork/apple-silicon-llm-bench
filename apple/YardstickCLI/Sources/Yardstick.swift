@@ -138,6 +138,7 @@ struct YardstickApp {
         print("  executorch   — PyTorch ExecuTorch (XNNPACK / CoreML delegate)")
         print("  llama-cpp    — llama.cpp via vendored xcframework (CPU + Metal)")
         print("  anemll       — ANEMLL via vendored anemll-swift-cli (ANE)")
+        print("  apple-fm     — Apple Foundation Models (macOS 26+, Apple-Intelligence-eligible Macs)")
         print("  litert-lm    — MediaPipe / LiteRT-LM (NOT YET WIRED on Mac)")
         print("")
         print("Available tasks:")
@@ -153,6 +154,7 @@ struct YardstickApp {
             ("executorch", ModelCatalog.executorch),
             ("llama-cpp", ModelCatalog.llamaCpp),
             ("anemll", ModelCatalog.anemll),
+            ("apple-fm", ModelCatalog.appleFM),
         ] {
             guard !models.isEmpty else { continue }
             print("\n  [\(label)]")
@@ -177,13 +179,15 @@ struct YardstickApp {
             return LlamaCppRuntime()
         case "anemll":
             return AnemllRuntime()
+        case "apple-fm", "apple", "fm", "foundation-models":
+            return AppleFMRuntime()
         case "litert-lm", "mediapipe":
             throw CLIError.invalidArgument(
                 "runtime 'litert-lm' is not wired up in the Mac CLI yet: paescebu/SwiftTasksGenAI requires adding via Xcode UI and its macOS xcframework slice has not been verified."
             )
         default:
             throw CLIError.invalidArgument(
-                "unknown runtime '\(id)' — supported on Mac: mlx-swift, coreml-llm, executorch, llama-cpp, anemll"
+                "unknown runtime '\(id)' — supported on Mac: mlx-swift, coreml-llm, executorch, llama-cpp, anemll, apple-fm"
             )
         }
     }

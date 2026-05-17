@@ -87,6 +87,7 @@ def runtime_display(runtime: str) -> str:
         "executorch": "executorch",
         "anemll": "anemll",
         "litert-lm": "litert-lm",
+        "apple-fm": "apple-fm",
     }.get(runtime, runtime)
 
 
@@ -169,6 +170,13 @@ class Sample:
     prefill_tok_s: float
     decode_tok_s: float
     peak_mem_mb: float
+    itl_p50_ms: float | None
+    itl_p95_ms: float | None
+    itl_p99_ms: float | None
+    energy_j: float | None
+    energy_j_per_tok: float | None
+    avg_package_w: float | None
+    energy_source: str | None
     quantization: str
     model_display: str
     params_b: float | None
@@ -206,6 +214,13 @@ def parse_sample(path: Path) -> tuple[RunKey, Sample] | None:
         prefill_tok_s=float(metrics.get("promptTokensPerSecond", 0.0)),
         decode_tok_s=float(metrics.get("decodeTokensPerSecond", 0.0)),
         peak_mem_mb=float(metrics.get("memoryPeakDuringDecodeMB", 0.0)),
+        itl_p50_ms=metrics.get("interTokenLatencyP50MS"),
+        itl_p95_ms=metrics.get("interTokenLatencyP95MS"),
+        itl_p99_ms=metrics.get("interTokenLatencyP99MS"),
+        energy_j=metrics.get("energyJoules"),
+        energy_j_per_tok=metrics.get("energyJoulesPerToken"),
+        avg_package_w=metrics.get("averagePackagePowerW"),
+        energy_source=metrics.get("energySource"),
         quantization=model.get("quantization", "?"),
         model_display=model.get("displayName", model.get("id", "?")),
         params_b=model.get("parameterCountB"),
@@ -465,15 +480,115 @@ def render_coverage(groups: dict[RunKey, list[Sample]]) -> str:
 # ------------------------------------------------------------------ #
 
 
+def render_latency_profile(groups: dict[RunKey, list[Sample]]) -> str:
+    """Per (device, task, runtime, model) latency table — TTFT + ITL p50/p95/p99.
+
+    Hidden behind decode tok/s in the headline tables. ITL p99 is the
+    "worst-case glitch" that a chat UI perceives as a stall, even when
+    the average decode rate looks smooth.
+    """
+    have_itl = any(
+        any(s.itl_p95_ms is not None for s in samples)
+        for samples in groups.values()
+    )
+    if not have_itl:
+        return ""
+
+    out: list[str] = [
+        "## Latency profile (TTFT + inter-token jitter)",
+        "",
+        "Decode tok/s is an average. The percentiles below are the gap "
+        "between consecutive `.chunk` events — `p99` is the worst-case "
+        "stall a chat UI will perceive even when the average looks smooth. "
+        "Backfilled from the same runs as the headline numbers; rows "
+        "without ITL columns are JSONLs produced before the harness "
+        "started capturing per-token timestamps.",
+        "",
+        "| Device | Runtime | Model | n | TTFT (ms, median) | ITL p50 (ms) | ITL p95 (ms) | ITL p99 (ms) |",
+        "|---|---|---|---:|---:|---:|---:|---:|",
+    ]
+    ordered = sorted(
+        groups.items(),
+        key=lambda kv: (kv[0].device, kv[0].task, kv[0].runtime, kv[0].model_id),
+    )
+    for key, samples in ordered:
+        s0 = samples[0]
+        if not any(s.itl_p95_ms is not None for s in samples):
+            continue
+        n = len(samples)
+        out.append(
+            f"| {device_display(key.device)} "
+            f"| {runtime_display(key.runtime)} "
+            f"| {s0.model_display} "
+            f"| {n} "
+            f"| {fmt_int(median_or_only(s.ttft_ms for s in samples))} "
+            f"| {fmt_one(median_or_only((s.itl_p50_ms or 0) for s in samples if s.itl_p50_ms is not None))} "
+            f"| {fmt_one(median_or_only((s.itl_p95_ms or 0) for s in samples if s.itl_p95_ms is not None))} "
+            f"| {fmt_one(median_or_only((s.itl_p99_ms or 0) for s in samples if s.itl_p99_ms is not None))} |"
+        )
+    return "\n".join(out)
+
+
+def render_energy_profile(groups: dict[RunKey, list[Sample]]) -> str:
+    """Per (device, runtime, model) energy table — populated only for
+    runs that went through `scripts/measure_energy.py` (Mac) or that
+    recorded an iOS battery delta. Section is omitted entirely when no
+    sample carries any energy data."""
+
+    rows: list[tuple[RunKey, list[Sample]]] = [
+        (key, samples)
+        for key, samples in sorted(
+            groups.items(),
+            key=lambda kv: (kv[0].device, kv[0].task, kv[0].runtime, kv[0].model_id),
+        )
+        if any(s.energy_j is not None for s in samples)
+    ]
+    if not rows:
+        return ""
+
+    out: list[str] = [
+        "## Energy profile (joules per token)",
+        "",
+        "Populated for runs wrapped in `scripts/measure_energy.py` on Mac "
+        "(`powermetrics`-derived, whole-system) or iOS battery-delta. "
+        "Whole-system power on Mac includes ambient load — run on an "
+        "idle desktop and compare *runtimes on the same Mac*, not Macs to each other.",
+        "",
+        "| Device | Runtime | Model | n | Source | Avg pkg power (W) | Energy (J) | J / token |",
+        "|---|---|---|---:|---|---:|---:|---:|",
+    ]
+    for key, samples in rows:
+        s0 = samples[0]
+        energy_samples = [s for s in samples if s.energy_j is not None]
+        source = next(
+            (s.energy_source for s in energy_samples if s.energy_source),
+            "—",
+        )
+        out.append(
+            f"| {device_display(key.device)} "
+            f"| {runtime_display(key.runtime)} "
+            f"| {s0.model_display} "
+            f"| {len(energy_samples)} "
+            f"| {source} "
+            f"| {fmt_one(median_or_only((s.avg_package_w or 0) for s in samples if s.avg_package_w is not None))} "
+            f"| {fmt_one(median_or_only((s.energy_j or 0) for s in samples if s.energy_j is not None))} "
+            f"| {fmt_one(median_or_only((s.energy_j_per_tok or 0) for s in samples if s.energy_j_per_tok is not None), places=4)} |"
+        )
+    return "\n".join(out)
+
+
 def render_block(groups: dict[RunKey, list[Sample]]) -> str:
     sections = [
         render_coverage(groups),
         render_at_a_glance(groups),
         render_per_model_pivot(groups),
         render_per_runtime_pivot(groups),
+        render_latency_profile(groups),
+        render_energy_profile(groups),
         render_full_dump(groups),
     ]
-    return "\n\n".join(sections)
+    # Drop sections that returned empty (e.g. latency profile with no ITL data).
+    return "\n\n".join(s for s in sections if s)
 
 
 def splice(existing: str, block: str) -> str:

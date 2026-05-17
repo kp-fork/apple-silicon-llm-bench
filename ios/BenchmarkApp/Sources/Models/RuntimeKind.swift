@@ -7,6 +7,7 @@ public enum RuntimeKind: String, CaseIterable, Codable, Sendable, Identifiable {
     case mediaPipe = "litert-lm"
     case executorch = "executorch"
     case anemll = "anemll"
+    case appleFM = "apple-fm"
 
     public var id: String { rawValue }
 
@@ -18,6 +19,7 @@ public enum RuntimeKind: String, CaseIterable, Codable, Sendable, Identifiable {
         case .mediaPipe: return "MediaPipe / LiteRT-LM"
         case .executorch: return "ExecuTorch"
         case .anemll: return "ANEMLL (ANE)"
+        case .appleFM: return "Apple Foundation Models"
         }
     }
 }

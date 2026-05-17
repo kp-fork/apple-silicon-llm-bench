@@ -78,6 +78,15 @@ final class AppSession: ObservableObject {
             } else {
                 return UnavailableRuntime(kind: kind, reason: "Requires iOS 18.")
             }
+        case .appleFM:
+            if #available(iOS 26, *) {
+                return AppleFMRuntime()
+            } else {
+                return UnavailableRuntime(
+                    kind: kind,
+                    reason: "Apple Foundation Models requires iOS 26 + an Apple-Intelligence-eligible device."
+                )
+            }
         }
     }
 }

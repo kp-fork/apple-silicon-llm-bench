@@ -205,6 +205,9 @@ public actor BenchmarkRunner {
             peakThermalState: ThermalMonitor.describe(await thermalSampler.peakState),
             finalThermalState: ThermalMonitor.describe(await thermalSampler.finalState),
             decodeRateRollingWindow: rollingDecodeRate(window: tokenWindow, windowSeconds: 5),
+            interTokenLatencyP50MS: Self.percentileMS(tokenWindow: tokenWindow, percentile: 0.50),
+            interTokenLatencyP95MS: Self.percentileMS(tokenWindow: tokenWindow, percentile: 0.95),
+            interTokenLatencyP99MS: Self.percentileMS(tokenWindow: tokenWindow, percentile: 0.99),
             energyJoules: energy.joules,
             batteryDeltaPercent: energy.batteryDeltaPercent,
             energyJoulesPerToken: {
@@ -229,6 +232,29 @@ public actor BenchmarkRunner {
 
     private func emit(_ phase: Phase) {
         snapshotContinuation?.yield(Snapshot(phase: phase, elapsed: 0))
+    }
+
+    /// Compute a percentile of the inter-token latency distribution (ms).
+    /// `tokenWindow` holds one entry per emitted `.chunk` event; the gap
+    /// between consecutive entries is the inter-token latency that a chat
+    /// UI sees. Returns `nil` when fewer than two tokens were captured —
+    /// percentiles of a one-element sample are meaningless.
+    static func percentileMS(
+        tokenWindow: [(t: CFAbsoluteTime, n: Int)],
+        percentile: Double
+    ) -> Double? {
+        guard tokenWindow.count >= 2 else { return nil }
+        var gaps: [Double] = []
+        gaps.reserveCapacity(tokenWindow.count - 1)
+        for i in 1..<tokenWindow.count {
+            let dt = tokenWindow[i].t - tokenWindow[i - 1].t
+            gaps.append(dt * 1000.0)
+        }
+        gaps.sort()
+        // Nearest-rank percentile — matches what most engineers eyeball,
+        // doesn't depend on a numpy-style interpolation choice.
+        let rank = max(1, Int((percentile * Double(gaps.count)).rounded(.up)))
+        return gaps[min(rank - 1, gaps.count - 1)]
     }
 
     private func rollingDecodeRate(

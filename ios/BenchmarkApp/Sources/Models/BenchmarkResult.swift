@@ -76,6 +76,15 @@ public struct Metrics: Codable, Sendable {
 
     public let decodeRateRollingWindow: [Double]
 
+    /// Inter-token latency distribution in milliseconds, derived from the
+    /// gap between consecutive `.chunk` events. `nil` when fewer than two
+    /// tokens were emitted. The p95 / p99 numbers surface the worst-case
+    /// glitch that a chat UI will perceive as a stall, even when the
+    /// average decode tok/s looks smooth.
+    public let interTokenLatencyP50MS: Double?
+    public let interTokenLatencyP95MS: Double?
+    public let interTokenLatencyP99MS: Double?
+
     /// Estimated joules used during the run, derived from battery-level delta.
     /// `nil` when the run was too short for a 1% battery step to register.
     public let energyJoules: Double?
@@ -105,6 +114,9 @@ public struct Metrics: Codable, Sendable {
         peakThermalState: String,
         finalThermalState: String,
         decodeRateRollingWindow: [Double],
+        interTokenLatencyP50MS: Double?,
+        interTokenLatencyP95MS: Double?,
+        interTokenLatencyP99MS: Double?,
         energyJoules: Double?,
         batteryDeltaPercent: Float,
         energyJoulesPerToken: Double?
@@ -128,6 +140,9 @@ public struct Metrics: Codable, Sendable {
         self.peakThermalState = peakThermalState
         self.finalThermalState = finalThermalState
         self.decodeRateRollingWindow = decodeRateRollingWindow
+        self.interTokenLatencyP50MS = interTokenLatencyP50MS
+        self.interTokenLatencyP95MS = interTokenLatencyP95MS
+        self.interTokenLatencyP99MS = interTokenLatencyP99MS
         self.energyJoules = energyJoules
         self.batteryDeltaPercent = batteryDeltaPercent
         self.energyJoulesPerToken = energyJoulesPerToken

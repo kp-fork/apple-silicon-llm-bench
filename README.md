@@ -10,19 +10,19 @@ A neutral, reproducible benchmark for running local LLMs (and, in time, ASR / TT
 
 ## 📊 Latest numbers — Apple M4 Max, short-chat (128 tokens, decode tok/s, median)
 
-> One device, three runtimes, multiple models. Decode tok/s is the primary headline number; the full table (prefill, TTFT, peak memory, per-run audit trail) lives in [`RESULTS.md`](RESULTS.md). Read the [Headline observations](RESULTS.md#headline-observations-read-this-after-the-tables) section before drawing conclusions — the runtime ranking is **model-size-dependent**.
+> One device, four runtimes, multiple models. Decode tok/s is the primary headline number; the full table (prefill, TTFT, peak memory, per-run audit trail) lives in [`RESULTS.md`](RESULTS.md). Read the [Headline observations](RESULTS.md#headline-observations-read-this-after-the-tables) section before drawing conclusions — the runtime ranking is **model-size-dependent**.
 
 ### Cross-runtime — same logical model, different backends (decode tok/s, median)
 
 | Logical model | Params | n | mlx-swift (Q4) | llama.cpp (Q4_K_M) | coreml-llm |
 |---|---:|---:|---:|---:|---:|
-| Qwen 2.5 0.5B | 0.5 B | 3 | 116.8 | **292.3** | 180.7 (FP16) |
-| Qwen 3.5 0.8B | 0.8 B | 3 | 81.3 | **192.0** | 57.5 (INT8) |
-| Qwen 3.5 2B   | 2 B   | 3 | 79.9 | **132.9** | 34.9 (INT8) |
-| Gemma 4 E2B   | 2 B   | 3 | 56.6 | **119.6** | 32.9 (INT4 palettized) |
-| Gemma 4 E4B   | 4 B   | 1 | **45.1** | 40.7 | _not run_ |
+| Qwen 2.5 0.5B | 0.5 B | 3 | **531.1** | 297.1 | 181.2 (FP16) |
+| Qwen 3.5 0.8B | 0.8 B | 3 | **421.1** | 201.1 | 58.2 (INT8) |
+| Qwen 3.5 2B   | 2 B   | 3 | **291.9** | 149.7 | 35.0 (INT8) |
+| Gemma 4 E2B   | 2 B   | 3 | **185.4** | 119.2 | 32.5 (INT4 palettized) |
+| Gemma 4 E4B   | 4 B   | 3 | **113.5** | 80.5 | _not run_ |
 
-→ llama.cpp Metal wins decode on every cell at or below 2 B params (1.7×–2.5× over MLX-Swift). At 4 B params (Gemma 4 E4B) **MLX-Swift overtakes llama.cpp**. The ranking is not a property of the runtime; it's a property of `(runtime, model, device)`.
+→ **MLX-Swift now wins decode on every cell** — 1.4×–1.8× over llama.cpp — after upstream `mlx-swift-lm` shipped Qwen + Gemma kernel updates in early 2026 (the Qwen rows roughly tripled vs. the snapshot captured before those landed). The old "llama.cpp Metal always wins small-model decode" rule is no longer true on M4 Max; re-measure before quoting it. CoreML / ANE is the slowest of the three on every cell, in exchange for the dramatic memory savings shown below.
 
 ### Cross-runtime — peak memory (MB, median)
 
@@ -30,11 +30,11 @@ The decode-tok/s table above hides the memory side. Same models, looking at peak
 
 | Logical model | Params | mlx-swift | llama.cpp | coreml-llm |
 |---|---:|---:|---:|---:|
-| Qwen 2.5 0.5B | 0.5 B | **413** | 543 | 959 |
-| Qwen 3.5 0.8B | 0.8 B | **618** | 754 | 206 (INT8) |
-| Qwen 3.5 2B   | 2 B   | 1243 | 1445 | **215** (INT8) |
-| Gemma 4 E2B   | 2 B   | 2834 | 3182 | **1055** |
-| Gemma 4 E4B   | 4 B   | **4417** | 5093 | — |
+| Qwen 2.5 0.5B | 0.5 B | **390** | 538 | 962 |
+| Qwen 3.5 0.8B | 0.8 B | **600** | 752 | 221 (INT8) |
+| Qwen 3.5 2B   | 2 B   | 1223 | 1443 | **230** (INT8) |
+| Gemma 4 E2B   | 2 B   | 2829 | 3212 | **1036** |
+| Gemma 4 E4B   | 4 B   | **4376** | 5150 | — |
 
 → **"CoreML/ANE wins memory" is true once the chunked MLKV layout kicks in.** At 0.5 B params MLX-Swift is still smaller (413 MB vs CoreML's 959 MB monolithic FP16); from 0.8 B onward, CoreML's chunked MLKV path (`Qwen35MLKVGenerator`: mmap'd embed sidecar + on-demand ANE chunks) holds the process RSS roughly flat — 206 MB at 0.8 B, 215 MB at 2 B — while MLX and llama.cpp scale linearly with parameter count.
 
@@ -44,34 +44,48 @@ The decode-tok/s table above hides the memory side. Same models, looking at peak
 
 | Model | Params | n | TTFT (ms) | Decode tok/s | Peak Mem (MB) |
 |---|---:|---:|---:|---:|---:|
-| Qwen 2.5 0.5B | 0.5 B | 1 | 120 | 292.3 | 543 |
-| Qwen 3.5 0.8B | 0.8 B | 3 | 26  | 192.0 | 754 |
+| Qwen 2.5 0.5B | 0.5 B | 3 | 22  | 297.1 | 538 |
+| Qwen 3.5 0.8B | 0.8 B | 3 | 22  | 201.1 | 752 |
 | Llama 3.2 1B  | 1.0 B | 3 | 25  | **285.9** | 1022 |
-| Qwen 3.5 2B   | 2 B   | 3 | 31  | 132.9 | 1445 |
-| Gemma 4 E2B   | 2 B   | 3 | 43  | 119.6 | 3182 |
-| Gemma 4 E4B   | 4 B   | 1 | 162 | 40.7  | 5093 |
+| Qwen 3.5 2B   | 2 B   | 3 | 29  | 149.7 | 1443 |
+| Gemma 4 E2B   | 2 B   | 3 | 41  | 119.2 | 3212 |
+| Gemma 4 E4B   | 4 B   | 3 | 62  | 80.5  | 5150 |
 
 <sub>**mlx-swift** (Q4 / MLX, M4 Max, short-chat)</sub>
 
 | Model | Params | n | TTFT (ms) | Decode tok/s | Peak Mem (MB) |
 |---|---:|---:|---:|---:|---:|
-| Qwen 2.5 0.5B | 0.5 B | 3 | 32 | 116.8 | 413 |
-| Qwen 3.5 0.8B | 0.8 B | 3 | 52 | 81.3 | 618 |
-| Qwen 3.5 2B   | 2 B   | 3 | 50 | 79.9 | 1243 |
-| Gemma 4 E2B   | 2 B   | 3 | 100 | 56.6 | 2834 |
-| Gemma 4 E4B   | 4 B   | 1 | 114 | 45.1 | 4417 |
+| Qwen 2.5 0.5B | 0.5 B | 3 | 21  | **531.1** | 390 |
+| Qwen 3.5 0.8B | 0.8 B | 3 | 36  | **421.1** | 600 |
+| Qwen 3.5 2B   | 2 B   | 3 | 42  | **291.9** | 1223 |
+| Gemma 4 E2B   | 2 B   | 3 | 68  | 185.4     | 2829 |
+| Gemma 4 E4B   | 4 B   | 3 | 90  | 113.5     | 4376 |
 
 <sub>**coreml-llm** (CoreML / ANE, M4 Max, short-chat)</sub>
 
 | Model | Params | n | TTFT (ms) | Decode tok/s | Peak Mem (MB) |
 |---|---:|---:|---:|---:|---:|
 | LFM 2.5 350M  | 0.35 B | 1 | 383 | 58.9  | **98**  |
-| Qwen 2.5 0.5B | 0.5 B  | 3 | 171 | 180.7 | 959     |
-| Qwen 3.5 0.8B | 0.8 B  | 3 | 415 | 57.5  | **206** |
-| Qwen 3.5 2B   | 2 B    | 3 | 673 | 34.9  | **215** |
-| Gemma 4 E2B   | 2 B    | 3 | 616 | 32.9  | 1055    |
+| Qwen 2.5 0.5B | 0.5 B  | 3 | 171 | 181.2 | 962     |
+| Qwen 3.5 0.8B | 0.8 B  | 3 | 405 | 58.2  | **221** |
+| Qwen 3.5 2B   | 2 B    | 3 | 665 | 35.0  | **230** |
+| Gemma 4 E2B   | 2 B    | 3 | 525 | 32.5  | 1036    |
 
 → CoreML/ANE trades throughput for memory: 3-8× less peak working set than MLX-Swift / llama.cpp at the same model size, at ~half the decode tok/s. The Qwen 3.5 0.8B / 2B numbers come from the dedicated `Qwen35MLKVGenerator` (ANE chunked decode, KV in `MLState` — public API since CoreML-LLM `v1.9.0`), not the generic `CoreMLLLM.load(from:)` path.
+
+### Apple Foundation Models (system, on-device — reference row)
+
+Apple FM is a single pre-installed model, so it can't share a "logical model" row with the open-weight runtimes above. It earns its own line as a reference point — the number to beat when "just use the system model" is the alternative.
+
+| Runtime | Model | n | TTFT (ms) | Decode tok/s | Peak Mem (MB, in-process) |
+|---|---|---:|---:|---:|---:|
+| apple-fm | Apple Foundation Model (default, ~3 B params est.) | 3 | 269 | 85.2 | 27 |
+
+**Caveats — read before comparing.**
+
+- **Tokens are estimated** (`utf8.count / 4`) because `FoundationModels` does not expose the tokenizer. Treat decode tok/s as ±20%; the other runtimes report counts from their actual tokenizer.
+- **Peak memory is in-process only.** The model lives in Apple's system process, not ours, so 27 MB is the harness overhead — not the true model footprint. Use Activity Monitor / `powermetrics` for the system-wide picture.
+- **Quant is Apple-internal.** Community reverse-engineering puts it at ~2-bit base weights + 4-bit task adapters; Apple has not published numbers. Don't read the decode tok/s as a comment on any specific quant choice.
 
 **[Full results — by model, by runtime, full per-run audit trail →](RESULTS.md)**
 
@@ -115,11 +129,41 @@ Per `(runtime, model, device, build)` tuple:
 - **Speed** — TTFT, prefill `tok/s`, decode `tok/s`, sustained-decode drift over 512+ tokens.
 - **Memory** — baseline, peak during decode, after-generation.
 - **Thermal** — initial / peak / final state across the run.
-- **Energy** — joules per token where the battery-step API gives a useful signal.
+- **Jitter** — inter-token latency `p50` / `p95` / `p99` ms, captured from the gap between consecutive `.chunk` events. Surfaces the worst-case stall a chat UI will perceive even when the average decode rate looks smooth.
+- **Energy** — joules per token. iOS uses the 1%-battery-step API; Mac uses `scripts/measure_energy.py` (wraps `powermetrics`, see "Optional: capture Mac energy" below).
 - **Lifecycle** — survives background → foreground, cancellation latency, streaming.
 - **Quality** *(roadmap)* — WER / CER for ASR, perplexity / MMLU for LLM, byte-identical comparison vs Python references.
 
 Methodology lives under [`methodology/`](methodology/). The numbers we publish follow [`methodology/fairness-rules.md`](methodology/fairness-rules.md).
+
+### Optional: capture Mac energy with `powermetrics`
+
+```sh
+sudo python scripts/measure_energy.py run \
+     --task short-chat --runtime mlx-swift \
+     --model mlx-community/gemma-4-e2b-it-4bit \
+     --output results/raw/<device>-<runtime>-<model>-<task>-energy.jsonl
+```
+
+The wrapper starts `powermetrics` in the background, runs `yardstick`,
+stops `powermetrics`, then patches the JSONL with `energyJoules`,
+`averagePackagePowerW`, and `energyJoulesPerToken`. Numbers are
+whole-system — run on an idle desktop and use them to compare
+runtimes on the same Mac, not Macs to each other.
+
+### Optional: import iPhone / iPad runs
+
+The iOS app's **History → ••• → Export all (JSONL)** sheet hands you a
+single newline-delimited file. AirDrop it to your Mac, then:
+
+```sh
+python scripts/import_ios_export.py ~/Downloads/yardstick-*.jsonl
+python scripts/render_results.py
+```
+
+The import script splits the bundle into one
+`results/raw/<device>-<runtime>-<model>-<task>-runN.jsonl` per row,
+re-keying the device label so `render_results.py` recognises it.
 
 ## Project shape
 
@@ -179,6 +223,7 @@ First launch downloads the chosen model (default: `mlx-community/gemma-4-e2b-it-
 | MediaPipe / LiteRT-LM | `MediaPipeRuntime.swift` | `canImport`-gated; add `paescebu/SwiftTasksGenAI` via Xcode UI |
 | ExecuTorch | `ExecuTorchRuntime.swift` | SPM (`pytorch/executorch` `swiftpm-*` branch) |
 | ANEMLL | `AnemllRuntime.swift` | local SPM via vendored `Anemll/` (`bootstrap.sh`) |
+| Apple Foundation Models | `AppleFMRuntime.swift` | system framework, `#if canImport(FoundationModels)` (macOS 26 / iOS 26) |
 
 Adapters whose framework isn't present at build time are gated with `#if canImport(...)` and fall back to a clear "not added" error rather than failing the build.
 

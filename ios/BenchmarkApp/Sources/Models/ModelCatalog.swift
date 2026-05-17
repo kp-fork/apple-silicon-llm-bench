@@ -339,6 +339,25 @@ public enum ModelCatalog {
         ),
     ]
 
+    /// Models the Apple Foundation Models adapter can run.
+    ///
+    /// Apple FM is a single, pre-installed on-device model — no HF download,
+    /// no model picking. The catalog still carries one entry so the harness
+    /// can attach a stable id / display name to the runs. Size / quant are
+    /// best-guess (Apple has not published a parameter count for the GA
+    /// model; community estimates put it at ~3B params with 2-bit / 4-bit
+    /// adapters).
+    public static let appleFM: [ModelInfo] = [
+        ModelInfo(
+            id: "apple-fm/default",
+            displayName: "Apple Foundation Model (default, on-device)",
+            quantization: "Apple-quant (~2-4 bit, adapters)",
+            parameterCountB: 3.0,
+            onDiskSizeMB: nil,
+            hfRepoId: ""
+        ),
+    ]
+
     /// Default model picked when the app first launches.
     public static let defaultModel: ModelInfo = mlx[0]
 }

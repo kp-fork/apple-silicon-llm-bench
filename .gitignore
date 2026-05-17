@@ -40,3 +40,7 @@ results/raw/local-*
 
 # Logs
 *.log
+
+# Python
+__pycache__/
+*.pyc

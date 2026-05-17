@@ -119,6 +119,7 @@ targets:
       - path: Sources/Runtimes/ExecuTorchRuntime.swift
       - path: Sources/Runtimes/LlamaCppRuntime.swift
       - path: Sources/Runtimes/AnemllRuntime.swift
+      - path: Sources/Runtimes/AppleFMRuntime.swift
       - path: ../../apple/YardstickCLI/Sources
     settings:
       base:

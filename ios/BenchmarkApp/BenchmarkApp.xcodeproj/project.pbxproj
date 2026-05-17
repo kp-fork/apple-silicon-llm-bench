@@ -62,6 +62,7 @@
 		9C5DF4C1C1EF300A1B21B367 /* ShortChatTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B472A5B7142B5A088948C3E /* ShortChatTask.swift */; };
 		9CF9A0FAC7BDA40ADA7B7D86 /* ThermalMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07DBDFD928C557A5352D613E /* ThermalMonitor.swift */; };
 		9E7D44C95CD1FFE50638B1BF /* AppLifecycleTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1124C321F63E5E0AEEF8902E /* AppLifecycleTask.swift */; };
+		9F1C833528187CA27858CE0E /* AppleFMRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F9A6C56B5E90A8DF016F8DB /* AppleFMRuntime.swift */; };
 		9FB0903D22C954FDEB555847 /* ResultStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7B6B97C8F1331B7F122CF4 /* ResultStore.swift */; };
 		A015EE7A7A064B865CF498FD /* executorch_llm in Frameworks */ = {isa = PBXBuildFile; productRef = 29AE3D43BC5F40FBC1105806 /* executorch_llm */; };
 		A09211745827F71359B56AF8 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B1EE778237E01ED0945D4AE /* HistoryView.swift */; };
@@ -70,6 +71,7 @@
 		BCA6E27341892C066E7C17AB /* executorch_llm in Frameworks */ = {isa = PBXBuildFile; productRef = 42211F46508DC5E51996CB45 /* executorch_llm */; };
 		BE6487CEF4C49373288701CC /* Yardstick.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C8A95BC024A5299976FB3A /* Yardstick.swift */; };
 		C3077165679D541B3891953F /* RunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5119926653436F65E0C37EB /* RunView.swift */; };
+		C8B3745CF3A81689ED8873AB /* AppleFMRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F9A6C56B5E90A8DF016F8DB /* AppleFMRuntime.swift */; };
 		CCB176ACF070E9D1D8D4C50A /* backend_xnnpack in Frameworks */ = {isa = PBXBuildFile; productRef = 08015CC1FD43865B1B801A53 /* backend_xnnpack */; };
 		CCB3F0B9B7883B6C0119253C /* backend_xnnpack in Frameworks */ = {isa = PBXBuildFile; productRef = 6AE7DCD576FA9CBF8CFF3AA8 /* backend_xnnpack */; };
 		CE55A5633E945419992D1CC8 /* SustainedGenerationTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDC21ED32AE3215BD9BAB3DC /* SustainedGenerationTask.swift */; };
@@ -110,6 +112,7 @@
 		1E86895F4C4C799B493D115C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1F54149AFF1D39F2B9377885 /* LlamaCppRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaCppRuntime.swift; sourceTree = "<group>"; };
 		2F6CAC41B79737975D3977D7 /* BenchmarkResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkResult.swift; sourceTree = "<group>"; };
+		2F9A6C56B5E90A8DF016F8DB /* AppleFMRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleFMRuntime.swift; sourceTree = "<group>"; };
 		3B472A5B7142B5A088948C3E /* ShortChatTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortChatTask.swift; sourceTree = "<group>"; };
 		3D1A95AD68FB592E643E5CD3 /* yardstick */ = {isa = PBXFileReference; includeInIndex = 0; path = yardstick; sourceTree = BUILT_PRODUCTS_DIR; };
 		4067D0B1A8F984760C2DD584 /* ResultDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultDetailView.swift; sourceTree = "<group>"; };
@@ -289,6 +292,7 @@
 			isa = PBXGroup;
 			children = (
 				46BF89FC5DAB913F5DC74C99 /* AnemllRuntime.swift */,
+				2F9A6C56B5E90A8DF016F8DB /* AppleFMRuntime.swift */,
 				571463D6F5C7502E074043E5 /* CoreMLRuntime.swift */,
 				8A1FDA1BD8CFFB6E92798B22 /* ExecuTorchRuntime.swift */,
 				F5235B8E78B06C2870291FF5 /* HFDownloader.swift */,
@@ -471,6 +475,7 @@
 			files = (
 				531015CDC40AD8F9995AE7F7 /* AnemllRuntime.swift in Sources */,
 				802E92307B6E8145D1143425 /* AppLifecycleTask.swift in Sources */,
+				9F1C833528187CA27858CE0E /* AppleFMRuntime.swift in Sources */,
 				100A9D75956A32FC2BA2C1F2 /* BenchmarkResult.swift in Sources */,
 				FDB9A3ACB956F700E71E93E4 /* BenchmarkRunner.swift in Sources */,
 				235129CA3670027E3887200D /* BenchmarkTask.swift in Sources */,
@@ -502,6 +507,7 @@
 				3265BD866E12254B5F9D02D5 /* AboutView.swift in Sources */,
 				4D5CECB4C50714A3B928F66C /* AnemllRuntime.swift in Sources */,
 				9E7D44C95CD1FFE50638B1BF /* AppLifecycleTask.swift in Sources */,
+				C8B3745CF3A81689ED8873AB /* AppleFMRuntime.swift in Sources */,
 				FC109CE8470E795A439D5F24 /* BenchmarkApp.swift in Sources */,
 				233E07CCDFD38F03A7808A08 /* BenchmarkResult.swift in Sources */,
 				365ACCF96B78A7F412A50860 /* BenchmarkRunner.swift in Sources */,
