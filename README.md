@@ -38,6 +38,19 @@ The decode-tok/s table above hides the memory side. Same models, looking at peak
 
 → **"CoreML/ANE wins memory" is true once the chunked MLKV layout kicks in.** At 0.5 B params MLX-Swift is still smaller (413 MB vs CoreML's 959 MB monolithic FP16); from 0.8 B onward, CoreML's chunked MLKV path (`Qwen35MLKVGenerator`: mmap'd embed sidecar + on-demand ANE chunks) holds the process RSS roughly flat — 206 MB at 0.8 B, 215 MB at 2 B — while MLX and llama.cpp scale linearly with parameter count.
 
+### Cross-runtime — energy per token (Gemma 4 E2B, sustained-512, M4 Max)
+
+The number nobody else publishes: how many joules does each backend burn per generated token? Captured via [`scripts/measure_energy.py`](scripts/measure_energy.py) which co-runs `powermetrics` (whole-system, package power = CPU + GPU + ANE) and clips the sample window to the bench's reported active time.
+
+| Runtime | Avg pkg power (W) | Energy / 512-tok run (J) | **J / token** |
+|---|---:|---:|---:|
+| **apple-fm** (system model) | 7.6  | 67.4  | **0.11** |
+| mlx-swift (4-bit MLX) | 24.7 | 123.0 | 0.24 |
+| llama.cpp (Q4_K_M, GGUF) | 24.5 | 126.3 | 0.25 |
+| coreml-llm (INT4 palettized, ANE) | 12.7 | 244.9 | 0.48 |
+
+→ **Energy ranking inverts the decode-tok/s ranking.** Apple FM is 2× more efficient per token than the GPU-backed runtimes despite producing tokens at ~half the rate. CoreML/ANE has the lowest *instantaneous* power (12.7 W) but is the *worst* J/tok at 4× Apple FM, because the slower decode (32 tok/s) keeps the package powered up much longer. MLX-Swift and llama.cpp draw the most W (GPU) but produce tokens fast enough to break even at ~0.24 J/tok. Whole-system measurement includes the idle baseline so all four numbers slightly inflate per-token energy — useful for ranking, not for absolute attribution. iPhone energy uses the 1 %-battery-step API instead (different methodology, similar table shape).
+
 ### Per-runtime model scaling
 
 <sub>**llama.cpp** (Q4_K_M GGUF, M4 Max, short-chat)</sub>
