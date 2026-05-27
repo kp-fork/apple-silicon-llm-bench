@@ -274,7 +274,65 @@ def chart_tradeoff():
     print(f"wrote {OUT / 'tradeoff.png'}")
 
 
+# ------------------------------------------------------------------ #
+#  Chart 0 — iPhone 17 Pro headline: decode tok/s + peak memory
+# ------------------------------------------------------------------ #
+
+def chart_iphone():
+    runs = load_runs("iphone17pro", task="short-chat")
+    models = ["Qwen 3.5 2B", "Gemma 4 E2B"]
+    runtimes = ["mlx-swift", "llama.cpp"]
+    rt_label = {"mlx-swift": "MLX-Swift", "llama.cpp": "llama.cpp"}
+
+    dec: dict = {}
+    mem: dict = {}
+    for r in runs:
+        lm = logical_model(r["model"]["id"])
+        rt = r["runtime"]
+        if lm not in models or rt not in runtimes:
+            continue
+        dec.setdefault((lm, rt), []).append(r["metrics"]["decodeTokensPerSecond"])
+        mem.setdefault((lm, rt), []).append(r["metrics"]["memoryPeakDuringDecodeMB"])
+
+    xs = list(range(len(models)))
+    width = 0.36
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.4))
+
+    def grouped(ax, data, fmt, title, ylab):
+        ax.grid(False)
+        for i, rt in enumerate(runtimes):
+            ys = [median(data.get((m, rt), [])) or 0 for m in models]
+            offs = [x + (i - 0.5) * width for x in xs]
+            bars = ax.bar(offs, ys, width, label=rt_label[rt],
+                          color=PALETTE[rt], edgecolor="white", linewidth=0.6)
+            for b, y in zip(bars, ys):
+                ax.text(b.get_x() + b.get_width() / 2, y, fmt.format(y),
+                        ha="center", va="bottom", fontsize=10.5, fontweight="bold")
+        ax.set_xticks(xs)
+        ax.set_xticklabels(models, fontsize=11)
+        ax.set_title(title, fontsize=12.5, fontweight="bold", pad=10)
+        ax.set_ylabel(ylab)
+        ax.grid(True, axis="y", alpha=0.3)
+        ax.set_axisbelow(True)
+        ax.margins(y=0.20)
+
+    grouped(ax1, dec, "{:.0f}", "Decode throughput (tok/s)   ↑ better", "tok/s")
+    grouped(ax2, mem, "{:.0f}", "Peak memory (MB)   ↓ better", "MB")
+    ax1.legend(frameon=False, loc="upper right", fontsize=10.5)
+    fig.suptitle(
+        "On-device LLM — iPhone 17 Pro (A19 Pro) · 4-bit · short-chat · median of 3 cold runs",
+        fontsize=12.5, fontweight="bold", y=1.02,
+    )
+    fig.text(0.5, -0.02, "MLX-Swift wins decode AND peak memory on both models",
+             ha="center", fontsize=9.5, color="#666")
+    plt.tight_layout()
+    plt.savefig(OUT / "iphone_decode_mem.png")
+    plt.close(fig)
+    print(f"wrote {OUT / 'iphone_decode_mem.png'}")
+
+
 def main():
+    chart_iphone()
     chart_decode_tok_per_s()
     chart_energy_per_token()
     chart_itl_jitter()

@@ -1,16 +1,36 @@
 # Yardstick
 
-**Apple Silicon AI Benchmark — Mac + iPhone + iPad.**
+**On-device LLM benchmark for Apple Silicon — iPhone · iPad · Mac.**
 
-A neutral, reproducible benchmark for running local LLMs (and, in time, ASR / TTS) on Apple Silicon. Compares **MLX Swift, llama.cpp, CoreML (swift-transformers), MediaPipe / LiteRT-LM, ExecuTorch, ANEMLL** — and Apple's own Foundation Models — under real device constraints, not just `tok/s` on a server.
+A neutral, reproducible benchmark for running local LLMs (and, in time, ASR / TTS) on Apple Silicon. Compares **MLX Swift, llama.cpp, CoreML (swift-transformers), LiteRT-LM, ExecuTorch, ANEMLL** — and Apple's own Foundation Models — under real device constraints, not just `tok/s` on a server.
 
-> Originally `ios-llm-benchmark`. Renamed in May 2026 once the harness grew to cover Mac as a first-class target alongside iPhone / iPad.
+> Repo: `apple-silicon-llm-bench` · CLI/brand: `yardstick`. Started life as `ios-llm-benchmark` — iPhone is still the headline target, now measured alongside iPad and Mac.
 
 ---
 
-## TL;DR (M4 Max, May 2026)
+## 📱 TL;DR — iPhone 17 Pro (A19 Pro)
 
-No runtime wins everything. Each of the four optimises a different corner of the throughput / memory / energy / streaming-smoothness box:
+The headline is the phone: real LLM inference, on-device, no server. iPhone 17 Pro, 4-bit, short-chat (128 tokens), median of 3 cold runs.
+
+![iPhone 17 Pro — decode tok/s + peak memory, MLX-Swift vs llama.cpp](docs/charts/iphone_decode_mem.png)
+
+| Logical model | Params | n | **mlx-swift** decode | llama.cpp decode | **mlx-swift** mem | llama.cpp mem |
+|---|---:|---:|---:|---:|---:|---:|
+| Qwen 3.5 2B | 2 B | 3 | **61.2 tok/s** | 39.1 | **1279 MB** | 1479 |
+| Gemma 4 E2B | 2 B | 3 | **47.5 tok/s** | 37.8 | **2900 MB** | 3156 |
+
+- **MLX-Swift wins decode _and_ peak memory on both models** — 1.25×–1.6× faster than llama.cpp and a touch leaner in RAM. Same ranking as on the M4 Max desktop.
+- **The on-device tax is real:** roughly 4–5× slower than the M4 Max at the same model + runtime (Qwen 3.5 2B → 61 tok/s on iPhone vs 292 on M4 Max).
+- **Fully automated, side-loaded:** runs are driven headlessly from a Mac via `devicectl` — nothing typed on the phone — using the *same* methodology as the desktop rows.
+- **Coming next:** CoreML/ANE, Apple Foundation Models, LiteRT-LM, more models and more iPhones / iPads. [One row is a great PR](CONTRIBUTING.md).
+
+> Decode tok/s is the headline number; the full per-run audit (prefill, TTFT, inter-token jitter, memory) lives in [`RESULTS.md`](RESULTS.md).
+
+---
+
+## 🖥 Desktop reference — Apple M4 Max
+
+The same harness on a laptop-class chip, for scale. No runtime wins everything here — each optimises a different corner of the throughput / memory / energy / streaming box:
 
 ![Throughput × Energy tradeoff](docs/charts/tradeoff.png)
 
@@ -18,8 +38,6 @@ No runtime wins everything. Each of the four optimises a different corner of the
 - **Apple Foundation Models** is 2× more energy-efficient per token than the GPU-backed runtimes, 4× more than CoreML/ANE.
 - **CoreML / ANE** wins peak memory (chunked MLKV) but is the slowest *and* the worst on J/token.
 - **llama.cpp** sits in the middle on speed and energy — no axis it wins, no axis it loses badly.
-
-The four charts that summarise the rest of the headline numbers:
 
 | | |
 |---|---|
@@ -30,19 +48,21 @@ Regenerate after adding rows: `python scripts/generate_charts.py`.
 
 ---
 
-## 📊 Latest numbers — Apple M4 Max, short-chat (128 tokens, decode tok/s, median)
+## 📊 Full numbers — Apple M4 Max, short-chat (128 tokens, decode tok/s, median)
 
 > One device, four runtimes, multiple models. Decode tok/s is the primary headline number; the full table (prefill, TTFT, peak memory, per-run audit trail) lives in [`RESULTS.md`](RESULTS.md). Read the [Headline observations](RESULTS.md#headline-observations-read-this-after-the-tables) section before drawing conclusions — the runtime ranking is **model-size-dependent**.
 
 ### Cross-runtime — same logical model, different backends (decode tok/s, median)
 
-| Logical model | Params | n | mlx-swift (Q4) | llama.cpp (Q4_K_M) | coreml-llm |
-|---|---:|---:|---:|---:|---:|
-| Qwen 2.5 0.5B | 0.5 B | 3 | **531.1** | 297.1 | 181.2 (FP16) |
-| Qwen 3.5 0.8B | 0.8 B | 3 | **421.1** | 201.1 | 58.2 (INT8) |
-| Qwen 3.5 2B   | 2 B   | 3 | **291.9** | 149.7 | 35.0 (INT8) |
-| Gemma 4 E2B   | 2 B   | 3 | **185.4** | 119.2 | 32.5 (INT4 palettized) |
-| Gemma 4 E4B   | 4 B   | 3 | **113.5** | 80.5 | _not run_ |
+| Logical model | Params | n | mlx-swift (Q4) | llama.cpp (Q4_K_M) | coreml-llm | litert-lm (.litertlm) |
+|---|---:|---:|---:|---:|---:|---:|
+| Qwen 2.5 0.5B | 0.5 B | 3 | **531.1** | 297.1 | 181.2 (FP16) | n/a |
+| Qwen 3.5 0.8B | 0.8 B | 3 | **421.1** | 201.1 | 58.2 (INT8) | n/a |
+| Qwen 3.5 2B   | 2 B   | 3 | **291.9** | 149.7 | 35.0 (INT8) | n/a |
+| Gemma 4 E2B   | 2 B   | 3 | **185.4** | 119.2 | 32.5 (INT4 palettized) | _pending_ |
+| Gemma 4 E4B   | 4 B   | 3 | **113.5** | 80.5 | _not run_ | _pending_ |
+
+> `litert-lm` column: **_pending_** = adapter wired against `google-ai-edge/LiteRT-LM` v0.12.0, M4 Max run not yet captured (see [`RESULTS.md`](RESULTS.md) / `Yardstick_USER_RUNS.md`). **n/a** = LiteRT-LM's catalog is Gemma-only (`.litertlm`), so the Qwen rows have no entry. For reference, Google's E2B model card reports 56.5 tok/s on iPhone 17 Pro GPU — a vendor figure on a different device, not an M4 Max Yardstick measurement.
 
 → **MLX-Swift now wins decode on every cell** — 1.4×–1.8× over llama.cpp — after upstream `mlx-swift-lm` shipped Qwen + Gemma kernel updates in early 2026 (the Qwen rows roughly tripled vs. the snapshot captured before those landed). The old "llama.cpp Metal always wins small-model decode" rule is no longer true on M4 Max; re-measure before quoting it. CoreML / ANE is the slowest of the three on every cell, in exchange for the dramatic memory savings shown below.
 
@@ -50,13 +70,13 @@ Regenerate after adding rows: `python scripts/generate_charts.py`.
 
 The decode-tok/s table above hides the memory side. Same models, looking at peak working-set instead:
 
-| Logical model | Params | mlx-swift | llama.cpp | coreml-llm |
-|---|---:|---:|---:|---:|
-| Qwen 2.5 0.5B | 0.5 B | **390** | 538 | 962 |
-| Qwen 3.5 0.8B | 0.8 B | **600** | 752 | 221 (INT8) |
-| Qwen 3.5 2B   | 2 B   | 1223 | 1443 | **230** (INT8) |
-| Gemma 4 E2B   | 2 B   | 2829 | 3212 | **1036** |
-| Gemma 4 E4B   | 4 B   | **4376** | 5150 | — |
+| Logical model | Params | mlx-swift | llama.cpp | coreml-llm | litert-lm |
+|---|---:|---:|---:|---:|---:|
+| Qwen 2.5 0.5B | 0.5 B | **390** | 538 | 962 | n/a |
+| Qwen 3.5 0.8B | 0.8 B | **600** | 752 | 221 (INT8) | n/a |
+| Qwen 3.5 2B   | 2 B   | 1223 | 1443 | **230** (INT8) | n/a |
+| Gemma 4 E2B   | 2 B   | 2829 | 3212 | **1036** | _pending_ |
+| Gemma 4 E4B   | 4 B   | **4376** | 5150 | — | _pending_ |
 
 → **"CoreML/ANE wins memory" is true once the chunked MLKV layout kicks in.** At 0.5 B params MLX-Swift is still smaller (413 MB vs CoreML's 959 MB monolithic FP16); from 0.8 B onward, CoreML's chunked MLKV path (`Qwen35MLKVGenerator`: mmap'd embed sidecar + on-demand ANE chunks) holds the process RSS roughly flat — 206 MB at 0.8 B, 215 MB at 2 B — while MLX and llama.cpp scale linearly with parameter count.
 
