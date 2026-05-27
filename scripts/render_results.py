@@ -224,9 +224,17 @@ def parse_sample(path: Path) -> tuple[RunKey, Sample] | None:
         quantization=model.get("quantization", "?"),
         model_display=model.get("displayName", model.get("id", "?")),
         params_b=model.get("parameterCountB"),
-        os_label=device.get("systemName", "")
-        + " "
-        + (device.get("systemVersion", "").split(" ")[1] if device.get("systemVersion") else ""),
+        # macOS reports systemVersion as "Version 26.4.2 (Build 25A...)" (take
+        # the [1] token); iOS reports a bare "26.4.2" (no spaces) — handle both.
+        os_label=(
+            device.get("systemName", "")
+            + " "
+            + (
+                device.get("systemVersion", "").split(" ")[1]
+                if len(device.get("systemVersion", "").split(" ")) > 1
+                else device.get("systemVersion", "")
+            )
+        ).strip(),
         build=device.get("buildConfiguration", "?"),
     )
     return key, sample

@@ -18,11 +18,11 @@ On-device / on-Mac measurements. Each row is a `(runtime, model, device, task, b
 
 ## Coverage snapshot
 
-- **Devices** (1): Mac M4 Max
+- **Devices** (2): iPhone 17 Pro, Mac M4 Max
 - **Runtimes** (4): apple-fm, coreml-llm, llama.cpp, mlx-swift
 - **Models** (17): apple-fm/default, bartowski/Llama-3.2-1B-Instruct-GGUF/Q4_K_M, bartowski/Qwen2.5-0.5B-Instruct-GGUF/Q4_K_M, bartowski/Qwen_Qwen3.5-0.8B-GGUF/Q4_K_M, coreml-llm/gemma4-e2b, coreml-llm/lfm2.5-350m, coreml-llm/qwen2.5-0.5b, coreml-llm/qwen3.5-0.8b, coreml-llm/qwen3.5-2b, mlx-community/Qwen2.5-0.5B-Instruct-4bit, mlx-community/Qwen3.5-0.8B-MLX-4bit, mlx-community/Qwen3.5-2B-MLX-4bit, mlx-community/gemma-4-e2b-it-4bit, mlx-community/gemma-4-e4b-it-4bit, unsloth/Qwen3.5-2B-GGUF/Q4_K_M, unsloth/gemma-4-E2B-it-GGUF/Q4_K_M, unsloth/gemma-4-E4B-it-GGUF/Q4_K_M
 - **Tasks** (2): short-chat, sustained-generation
-- **Total runs**: 62
+- **Total runs**: 74
 
 
 ## At-a-glance
@@ -38,6 +38,20 @@ The cross-runtime cell with the broadest coverage today — **Gemma 4 E2B** on *
 ## Pivot 1 — by model
 
 Each sub-table fixes the *logical* model (Gemma 4 E2B, Qwen 3.5 2B, …) and varies the runtime. Runtimes pull weights from different HF orgs, so the precise model id varies per row — the quant column makes the difference explicit.
+
+### Gemma 4 E2B  (iPhone 17 Pro, short-chat)
+
+| Runtime | Model ID | Quant | n | Load (s, median) | TTFT (ms, median) | Prefill tok/s (median) | Decode tok/s (median) | Peak Mem (MB, median) |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| llama.cpp | `unsloth/gemma-4-E2B-it-GGUF/Q4_K_M` | Q4_K_M | 3 | 2.8 | 114 | 2086.6 | 37.8 | 3156 |
+| mlx-swift | `mlx-community/gemma-4-e2b-it-4bit` | Q4 | 3 | 3.0 | 144 | 179.9 | 47.5 | 2900 |
+
+### Qwen 3.5 2B  (iPhone 17 Pro, short-chat)
+
+| Runtime | Model ID | Quant | n | Load (s, median) | TTFT (ms, median) | Prefill tok/s (median) | Decode tok/s (median) | Peak Mem (MB, median) |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| llama.cpp | `unsloth/Qwen3.5-2B-GGUF/Q4_K_M` | Q4_K_M | 3 | 0.3 | 96 | 2503.9 | 39.1 | 1479 |
+| mlx-swift | `mlx-community/Qwen3.5-2B-MLX-4bit` | Q4 | 3 | 1.9 | 103 | 249.3 | 61.2 | 1279 |
 
 ### Gemma 4 E2B  (Mac M4 Max, short-chat)
 
@@ -114,6 +128,20 @@ Each sub-table fixes the *logical* model (Gemma 4 E2B, Qwen 3.5 2B, …) and var
 
 Each sub-table fixes the runtime and varies the model, so you can see how a single backend scales across model sizes within itself.
 
+### `llama.cpp`  (iPhone 17 Pro, short-chat)
+
+| Model | Params (B) | Quant | n | TTFT (ms, median) | Decode tok/s (median) | Peak Mem (MB, median) |
+|---|---:|---|---:|---:|---:|---:|
+| Qwen 3.5 2B Q4_K_M (GGUF) | 2 | Q4_K_M | 3 | 96 | 39.1 | 1479 |
+| Gemma 4 E2B Q4_K_M (GGUF) | 2 | Q4_K_M | 3 | 114 | 37.8 | 3156 |
+
+### `mlx-swift`  (iPhone 17 Pro, short-chat)
+
+| Model | Params (B) | Quant | n | TTFT (ms, median) | Decode tok/s (median) | Peak Mem (MB, median) |
+|---|---:|---|---:|---:|---:|---:|
+| Qwen 3.5 2B (4-bit) | 2 | Q4 | 3 | 103 | 61.2 | 1279 |
+| Gemma 4 E2B (4-bit) | 2 | Q4 | 3 | 144 | 47.5 | 2900 |
+
 ### `apple-fm`  (Mac M4 Max, short-chat)
 
 | Model | Params (B) | Quant | n | TTFT (ms, median) | Decode tok/s (median) | Peak Mem (MB, median) |
@@ -181,6 +209,10 @@ Decode tok/s is an average. The percentiles below are the gap between consecutiv
 
 | Device | Runtime | Model | n | TTFT (ms, median) | ITL p50 (ms) | ITL p95 (ms) | ITL p99 (ms) |
 |---|---|---|---:|---:|---:|---:|---:|
+| iPhone 17 Pro | llama.cpp | Qwen 3.5 2B Q4_K_M (GGUF) | 3 | 96 | 24.9 | 26.7 | 29.1 |
+| iPhone 17 Pro | llama.cpp | Gemma 4 E2B Q4_K_M (GGUF) | 3 | 114 | 25.2 | 27.5 | 29.1 |
+| iPhone 17 Pro | mlx-swift | Qwen 3.5 2B (4-bit) | 3 | 103 | 16.4 | 16.8 | 17.0 |
+| iPhone 17 Pro | mlx-swift | Gemma 4 E2B (4-bit) | 3 | 144 | 20.9 | 21.6 | 23.0 |
 | Mac M4 Max | apple-fm | Apple Foundation Model (default, on-device) | 3 | 265 | 168.3 | 200.4 | 200.4 |
 | Mac M4 Max | coreml-llm | Gemma 4 E2B (CoreML, ANE) | 3 | 525 | 30.7 | 32.0 | 32.4 |
 | Mac M4 Max | coreml-llm | Qwen 2.5 0.5B (CoreML, text) | 3 | 171 | 5.5 | 5.6 | 5.7 |
@@ -218,6 +250,18 @@ Every raw measurement. Use Pivots 1 and 2 above for analysis; this table is the 
 
 | Runtime | Model | Quant | Run | Load (s) | TTFT (ms) | Prefill tok/s | Decode tok/s | Peak Mem (MB) | JSONL |
 |---|---|---|---:|---:|---:|---:|---:|---:|---|
+| llama.cpp | Qwen 3.5 2B Q4_K_M (GGUF) | Q4_K_M | 1 | 1.2 | 336 | 41.3 | 39.6 | 1442 | `iphone17pro-llama-cpp-qwen3.5-2b-short-chat-run1.jsonl` |
+| llama.cpp | Qwen 3.5 2B Q4_K_M (GGUF) | Q4_K_M | 2 | 0.3 | 96 | 2876.6 | 39.1 | 1479 | `iphone17pro-llama-cpp-qwen3.5-2b-short-chat-run2.jsonl` |
+| llama.cpp | Qwen 3.5 2B Q4_K_M (GGUF) | Q4_K_M | 3 | 0.3 | 96 | 2503.9 | 38.7 | 1479 | `iphone17pro-llama-cpp-qwen3.5-2b-short-chat-run3.jsonl` |
+| llama.cpp | Gemma 4 E2B Q4_K_M (GGUF) | Q4_K_M | 1 | 10.2 | 901 | 14.9 | 37.4 | 3104 | `iphone17pro-llama-cpp-gemma-4-e2b-short-chat-run1.jsonl` |
+| llama.cpp | Gemma 4 E2B Q4_K_M (GGUF) | Q4_K_M | 2 | 2.8 | 106 | 2420.8 | 38.3 | 3156 | `iphone17pro-llama-cpp-gemma-4-e2b-short-chat-run2.jsonl` |
+| llama.cpp | Gemma 4 E2B Q4_K_M (GGUF) | Q4_K_M | 3 | 0.4 | 114 | 2086.6 | 37.8 | 3247 | `iphone17pro-llama-cpp-gemma-4-e2b-short-chat-run3.jsonl` |
+| mlx-swift | Qwen 3.5 2B (4-bit) | Q4 | 1 | 2.5 | 2589 | 8.9 | 60.7 | 1279 | `iphone17pro-mlx-qwen3.5-2b-short-chat-run1.jsonl` |
+| mlx-swift | Qwen 3.5 2B (4-bit) | Q4 | 2 | 1.7 | 102 | 251.3 | 61.6 | 1266 | `iphone17pro-mlx-qwen3.5-2b-short-chat-run2.jsonl` |
+| mlx-swift | Qwen 3.5 2B (4-bit) | Q4 | 3 | 1.9 | 103 | 249.3 | 61.2 | 1282 | `iphone17pro-mlx-qwen3.5-2b-short-chat-run3.jsonl` |
+| mlx-swift | Gemma 4 E2B (4-bit) | Q4 | 1 | 3.5 | 845 | 25.9 | 46.2 | 2902 | `iphone17pro-mlx-gemma-4-e2b-short-chat-run1.jsonl` |
+| mlx-swift | Gemma 4 E2B (4-bit) | Q4 | 2 | 3.0 | 132 | 204.6 | 48.3 | 2886 | `iphone17pro-mlx-gemma-4-e2b-short-chat-run2.jsonl` |
+| mlx-swift | Gemma 4 E2B (4-bit) | Q4 | 3 | 3.0 | 144 | 179.9 | 47.5 | 2900 | `iphone17pro-mlx-gemma-4-e2b-short-chat-run3.jsonl` |
 | apple-fm | Apple Foundation Model (default, on-device) | Apple-quant (~2-4 bit, adapters) | 1 | 0.0 | 569 | 21.1 | 84.7 | 27 | `m4max-apple-fm-default-short-chat-run1.jsonl` |
 | apple-fm | Apple Foundation Model (default, on-device) | Apple-quant (~2-4 bit, adapters) | 2 | 0.0 | 265 | 45.3 | 84.0 | 27 | `m4max-apple-fm-default-short-chat-run2.jsonl` |
 | apple-fm | Apple Foundation Model (default, on-device) | Apple-quant (~2-4 bit, adapters) | 3 | 0.0 | 265 | 45.3 | 84.3 | 27 | `m4max-apple-fm-default-short-chat-run3.jsonl` |
@@ -303,7 +347,8 @@ Failure is signal. Each one is a discrete upstream gap. The detailed remediation
 | coreml-llm | `coreml-llm/qwen3.5-0.8b` | Load failed | `mlboydaisuke/qwen3.5-0.8B-CoreML` ships chunked `.mlpackage`s rather than a single `model.mlpackage`. `CoreMLLLM` does not yet load chunked repos. |
 | executorch | `executorch-community/Llama-3.2-1B-Instruct-SpinQuant_INT4_EO8-ET` | Tokenizer parse error | ET's `hf_tokenizer.cpp` parses tokenizer files as HF JSON; the ET-community repos ship `tokenizer.model` (SentencePiece). |
 | anemll | `anemll/anemll-google-gemma-3-270m-it-ctx4096_0.3.5` | Download failed (`HTTPClientError error 1`) | `swift-huggingface.HFDownloader` can't traverse `.mlmodelc/` directory-shaped HF repos. |
-| litert-lm | (any) | Not buildable on Mac | `paescebu/SwiftTasksGenAI 0.10.24`'s xcframework lacks a macOS slice. |
+
+> **litert-lm** is no longer blocked. `google-ai-edge/LiteRT-LM` v0.12.0 ships a `macos-arm64` slice and reads Gemma 4 `.litertlm`, so the adapter now builds on Mac + iOS via plain SPM. Its Gemma 4 E2B / E4B rows will appear in the Pivot tables above automatically once a run's JSONL lands in `results/raw/` (`render_results.py` already maps the `litert-lm` runtime). Run commands: [`Yardstick_USER_RUNS.md`](../Yardstick_USER_RUNS.md). One build caveat to watch: the package's `-all_load` can clash (duplicate symbols) with the vendored `llama`/`executorch` static libs — fall back to a scoped `-force_load` if so.
 
 ## Tasks B / C / D
 
