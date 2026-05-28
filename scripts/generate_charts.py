@@ -282,9 +282,11 @@ def chart_iphone():
     runs = load_runs("iphone17pro", task="short-chat")
     models = ["Qwen 3.5 2B", "Gemma 4 E2B"]
     # litert-lm first to spotlight the Gemma upset; it's Gemma-only (no Qwen bar).
-    runtimes = ["litert-lm", "mlx-swift", "llama.cpp"]
-    rt_label = {"litert-lm": "LiteRT-LM", "mlx-swift": "MLX-Swift", "llama.cpp": "llama.cpp"}
-    color = {"litert-lm": "#e11d48", "mlx-swift": PALETTE["mlx-swift"], "llama.cpp": PALETTE["llama.cpp"]}
+    runtimes = ["litert-lm", "mlx-swift", "llama.cpp", "coreml-llm"]
+    rt_label = {"litert-lm": "LiteRT-LM", "mlx-swift": "MLX-Swift",
+                "llama.cpp": "llama.cpp", "coreml-llm": "CoreML/ANE"}
+    color = {"litert-lm": "#e11d48", "mlx-swift": PALETTE["mlx-swift"],
+             "llama.cpp": PALETTE["llama.cpp"], "coreml-llm": PALETTE["coreml-llm"]}
 
     dec: dict = {}
     mem: dict = {}
@@ -297,8 +299,8 @@ def chart_iphone():
         mem.setdefault((lm, rt), []).append(r["metrics"]["memoryPeakDuringDecodeMB"])
 
     xs = list(range(len(models)))
-    width = 0.26
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.5, 4.6))
+    width = 0.20
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.8))
 
     def grouped(ax, data, fmt, title, ylab):
         ax.grid(False)
@@ -309,7 +311,7 @@ def chart_iphone():
                 if not vals:
                     continue  # e.g. LiteRT-LM has no Qwen row (Gemma-only catalog)
                 y = median(vals)
-                x = xs[j] + (i - 1) * width
+                x = xs[j] + (i - 1.5) * width
                 ax.bar([x], [y], width,
                        label=(rt_label[rt] if rt not in labelled else None),
                        color=color[rt], edgecolor="white", linewidth=0.6)
@@ -333,7 +335,7 @@ def chart_iphone():
         fontsize=12.5, fontweight="bold", y=1.03,
     )
     fig.text(0.5, -0.03,
-             "Gemma 4 E2B: LiteRT-LM leads decode + ~4.5× less memory  ·  Qwen 3.5 2B: MLX wins (LiteRT-LM is Gemma-only)  ·  LiteRT-LM runs to EOS (its API has no token cap)",
+             "Decode: LiteRT-LM wins Gemma, MLX wins Qwen  ·  Memory: CoreML/ANE as low as 241 MB (Qwen, ~5× leaner)  ·  LiteRT-LM is Gemma-only; CoreML/ANE trades speed for memory",
              ha="center", fontsize=8.5, color="#666")
     plt.tight_layout()
     plt.savefig(OUT / "iphone_decode_mem.png")

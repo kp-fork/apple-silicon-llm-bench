@@ -16,26 +16,29 @@ Real LLM inference on a phone — on-device, no server. iPhone 17 Pro, 4-bit, sh
 
 **Decode throughput** — tok/s, higher is better (🏆 = winner):
 
-| Model (4-bit, n=3) | 🔴 LiteRT-LM | 🟣 MLX-Swift | 🔵 llama.cpp |
-|---|---:|---:|---:|
-| Gemma 4 E2B | **55.4** 🏆 | 47.5 | 37.8 |
-| Qwen 3.5 2B | — | **61.2** 🏆 | 39.1 |
+| Model (4-bit, n=3) | 🔴 LiteRT-LM | 🟣 MLX-Swift | 🔵 llama.cpp | 🟠 CoreML/ANE |
+|---|---:|---:|---:|---:|
+| Gemma 4 E2B | **55.4** 🏆 | 47.5 | 37.8 | 33.4 |
+| Qwen 3.5 2B | — | **61.2** 🏆 | 39.1 | 27.9 |
 
 **Peak memory** — MB, lower is better (🏆 = winner):
 
-| Model (4-bit, n=3) | 🔴 LiteRT-LM | 🟣 MLX-Swift | 🔵 llama.cpp |
-|---|---:|---:|---:|
-| Gemma 4 E2B | **641** 🏆 | 2,900 | 3,156 |
-| Qwen 3.5 2B | — | **1,279** 🏆 | 1,479 |
+| Model (4-bit, n=3) | 🔴 LiteRT-LM | 🟣 MLX-Swift | 🔵 llama.cpp | 🟠 CoreML/ANE |
+|---|---:|---:|---:|---:|
+| Gemma 4 E2B | **641** 🏆 | 2,900 | 3,156 | 1,187 |
+| Qwen 3.5 2B | — | 1,279 | 1,479 | **241** 🏆 |
 
-- **The upset — Gemma 4 E2B:** Google's **LiteRT-LM** (INT4-QAT, GPU, its native `.litertlm`) beats MLX-Swift on decode **and** uses **~4.5× less memory** (641 MB vs 2,900). The purpose-built runtime wins on its own format.
-- **MLX-Swift wins Qwen 3.5 2B** — 61 vs 39 tok/s, and leaner RAM. LiteRT-LM has no Qwen entry (its catalog is Gemma-only).
-- **All figures are exact**, including LiteRT-LM's — its tok/s + token counts come straight from LiteRT-LM's own benchmark counters (`getBenchmarkInfo`). One fairness note: LiteRT-LM has no per-call output cap, so it generates to **EOS** (a full ~458-token reply) where MLX / llama.cpp stop at the 128-token budget; decode tok/s is a steady-state rate, so the head-to-head holds.
-- **On-device tax:** ~4–5× slower than the M4 Max at the same model + runtime (Qwen 3.5 2B → 61 tok/s on iPhone vs 292 on M4 Max).
-- **Fully automated, side-loaded:** every run is driven headlessly from a Mac via `devicectl` — nothing typed on the phone — using the *same* methodology as the desktop rows.
-- **Coming next:** CoreML/ANE, Apple Foundation Models, more models and more iPhones / iPads. [One row is a great PR](CONTRIBUTING.md).
+- **The upset — Gemma 4 E2B:** Google's **LiteRT-LM** (INT4-QAT, GPU, its native `.litertlm`) beats MLX-Swift on decode **and** uses ~4.5× less memory (641 MB vs 2,900). The purpose-built runtime wins on its own format.
+- **MLX-Swift wins Qwen 3.5 2B decode** — 61 vs 39 tok/s. (LiteRT-LM has no Qwen entry — its catalog is Gemma-only.)
+- **CoreML / ANE is the memory champion** — Qwen 3.5 2B in just **241 MB** (~5× leaner than MLX's 1,279) via chunked-MLKV on the Neural Engine — but it's the **slowest decode** (ANE trades throughput for footprint), same story as on M4 Max.
+- **ANE is near-parity with the desktop:** CoreML Gemma 4 E2B does 33 tok/s on iPhone vs 32.5 on M4 Max — same silicon family. The **GPU** runtimes pay the real on-device tax: ~4–5× slower than M4 Max (Qwen 3.5 2B → 61 tok/s vs 292).
+- **Counting:** MLX / llama.cpp / LiteRT-LM report exact tokenizer tokens (LiteRT-LM via `getBenchmarkInfo`); CoreML/ANE counts streamed pieces (≈ tokens). LiteRT-LM runs to EOS (no per-call cap → ~458-tok reply vs the others' 128 budget); decode tok/s is a rate, so the head-to-head holds.
+- **Fully automated, side-loaded** via `devicectl` headless mode — nothing typed on the phone, same methodology as the desktop rows.
+- **Coming next:** Apple Foundation Models, more models and more iPhones / iPads. [One row is a great PR](CONTRIBUTING.md).
 
 > **How the LiteRT-LM row was measured:** `google-ai-edge/LiteRT-LM` 0.12.0 running `litert-community/gemma-4-E2B-it.litertlm` (INT4-QAT) on the Metal **GPU** backend, via the in-tree [`MediaPipeRuntime`](ios/BenchmarkApp/Sources/Runtimes/MediaPipeRuntime.swift) adapter — same headless harness + prompt as every other row (3 cold runs, median). Token counts and tok/s come from **LiteRT-LM's own benchmark counters** (`Conversation.getBenchmarkInfo`), so they're exact, not estimated. It generates to EOS (no per-call output cap in the API), so its token count is the model's full reply rather than the 128-token budget — decode tok/s is a rate and stays comparable; memory is exact process RSS. LiteRT-LM is vendored as a **local SwiftPM package** (`scripts/bootstrap.sh` clones it with `GIT_LFS_SKIP_SMUDGE=1`; the released package trips SwiftPM's unsafe-flags rule via its `-all_load`).
+>
+> **How the CoreML/ANE rows were measured:** `john-rocky/CoreML-LLM` on the Neural Engine (`computeUnits: .cpuAndNeuralEngine`) — Gemma 4 E2B via the chunked `.mlmodelc` path, Qwen 3.5 2B via `Qwen35MLKVGenerator` (chunked MLKV, hence the 241 MB). Decode counts streamed pieces (≈ tokens); first-load ANE compilation makes its load time high (and it's the lowest-throughput runtime — the ANE trades speed for memory).
 >
 > Decode tok/s is the headline number; the full per-run audit (prefill, TTFT, inter-token jitter, memory) lives in [`RESULTS.md`](RESULTS.md).
 
