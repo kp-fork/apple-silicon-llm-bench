@@ -2,9 +2,31 @@
 
 **On-device LLM benchmark for Apple Silicon — iPhone · iPad · Mac.**
 
-A neutral, reproducible benchmark for running local LLMs (and, in time, ASR / TTS) on Apple Silicon. Compares **MLX Swift, llama.cpp, CoreML (swift-transformers), LiteRT-LM, ExecuTorch, ANEMLL** — and Apple's own Foundation Models — under real device constraints, not just `tok/s` on a server.
+A neutral, reproducible benchmark for running local LLMs (and, in time, ASR / TTS) on Apple Silicon. Compares **MLX Swift, llama.cpp, CoreML (swift-transformers), LiteRT-LM, ExecuTorch, ANEMLL, Apple Core AI** — and Apple's own Foundation Models — under real device constraints, not just `tok/s` on a server.
 
 > Repo: `apple-silicon-llm-bench` · CLI/brand: `yardstick`. Started life as `ios-llm-benchmark` — iPhone is still the headline target, now measured alongside iPad and Mac.
+
+---
+
+## ⚡ NEW — Apple **Core AI** benchmarked (the Core ML successor)
+
+[Core AI](https://developer.apple.com/documentation/coreai) is Apple's Core ML successor, announced at WWDC 2026 (iOS / macOS 27). First independent on-device LLM benchmark — vs MLX and CoreML, **same model, same harness**.
+
+![Apple Core AI vs MLX vs CoreML — iPhone 17 Pro, Qwen3-0.6B](docs/charts/iphone_coreai_qwen3_0_6b.png)
+
+**iPhone 17 Pro · Qwen3-0.6B · short-chat · warm decode (median):**
+
+| Engine | Compute | Decode tok/s | Peak RAM |
+|---|---|---:|---:|
+| **Core AI** (pipelined) | GPU | **181** 🏆 _(1st run 71)_ | 524 MB |
+| MLX | GPU | 112 | 539 MB |
+| **Core AI** (static-shape) | ANE | 49 | 1,166 MB |
+| **CoreML-LLM** | ANE | 39 | **184** 🏆 |
+
+- **Core AI's GPU "pipelined" engine is the fastest on-device path here — ~1.6× MLX — once warm.** It pays a one-time first-run cost (kernel compilation + filling a 3-deep pipeline): ~71 tok/s on the very first generation, then ~181 steady-state. MLX is flat cold-to-warm.
+- **Core AI's compute unit is fixed by the *export shape*, not a runtime flag:** `coreai.llm.export … --platform iOS` (static) is detected as chunked-static → the **ANE**; a dynamic export → the **GPU** pipelined engine. And iOS can't JIT the exported IR — it must be `coreai-build compile`-d to a per-GPU-arch `.aimodelc` first (`No such file or directory` otherwise).
+- **CoreML-LLM is the memory champion** — 184 MB, ~6× leaner than Core AI's ANE path — via a stateful INT4 Neural-Engine conversion (own work, 100% ANE residency).
+- Faithful to Apple's intended path: official `coreai.llm.export` + the `coreai-models` `CoreAILM` runtime, driven by the in-tree [`CoreAIRuntime`](ios/BenchmarkApp/Sources/Runtimes/CoreAIRuntime.swift). Method + gotchas: [`methodology/coreai-ios.md`](methodology/coreai-ios.md).
 
 ---
 
