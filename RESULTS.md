@@ -152,6 +152,29 @@ Each sub-table fixes the *logical* model (Gemma 4 E2B, Qwen 3.5 2B, …) and var
 |---|---|---|---:|---:|---:|---:|---:|---:|
 | apple-fm | `apple-fm/default` | Apple-quant (~2-4 bit, adapters) | 1 | 0.0 | 687 | 29.1 | 78.2 | 29 |
 
+## Pivot 1.5 — Mac official-recipe matrix (Core AI vs MLX, synthetic 512p/1024g)
+
+Different protocol from the short-chat pivots above: Apple's `llm-benchmark` defaults
+(synthetic 512-token prompt / 1024 generated / 5 trials, greedy) vs `mlx_lm benchmark`
+with identical parameters — the two tools share the same methodology by design.
+M4 Max 128GB, macOS 27β artifacts. Load = warm `llm-runner` "Model Load"; Mem = peak
+RSS (`/usr/bin/time -l`). Raw: [`results/raw/2026-06-11-m4max-coreai-matrix/`](results/raw/2026-06-11-m4max-coreai-matrix/).
+
+| Model | Core AI artifact | CA decode | CA prefill | CA load (s) | CA RSS (GB) | MLX decode | MLX prefill | Verdict |
+|---|---|---:|---:|---:|---:|---:|---:|---|
+| gpt-oss-20b (MoE, MXFP4) | 13 GB | 78.1 | 1,252 | 2.1 | 33.9 | **100.2** | 1,528 | **MLX +28%** |
+| qwen3-0.6b (4-bit) | 335 MB | **484** | 9,396 | 0.10 | 0.77 | 432 | 9,366 | **CA +12%** |
+| qwen3-4b (4-bit) | 2.1 GB | 145.4 | **1,635** | 0.36 | 4.6 | 145.8 | 1,495 | tie |
+| qwen3-8b (4-bit) | 4.3 GB | **94.1** | 912 | 0.64 | 9.3 | 90.0 | 825 | **CA +5%** |
+| gemma3-4b-it (4-bit) | 2.1 GB | **141.5** | 1,669 | 0.32 | 4.5 | 136.3 | 1,631 | **CA +4%** |
+| mistral-7b-v0.3 (4-bit) | 3.8 GB | **101.7** | 976 | 0.56 | 8.3 | 97.5 | 918 | **CA +4%** |
+
+Core AI ≥ MLX on every dense model; MLX's one win is the MoE (expert dispatch).
+Caveats that matter: artifact lowering changed across the macOS 26→27β boundary
+(2.2× on 0.6B — see [`methodology/coreai-export-lowering.md`](methodology/coreai-export-lowering.md));
+gpt-oss `COREAI_CHUNK_THRESHOLD` trades prefill speed vs dirty footprint
+(766 tok/s @1.7 GB ↔ 1,439 tok/s @18 GB on 4096-token prompts).
+
 ## Pivot 2 — by runtime
 
 Each sub-table fixes the runtime and varies the model, so you can see how a single backend scales across model sizes within itself.

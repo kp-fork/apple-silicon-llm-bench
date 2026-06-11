@@ -34,10 +34,34 @@ A neutral, reproducible benchmark for running local LLMs (and, in time, ASR / TT
 
 | Model (4-bit) | Core AI GPU | MLX | Core AI lead |
 |---|---:|---:|---:|
-| Qwen3-0.6B | 1,121 | 455 | **2.47×** |
+| Qwen3-0.6B (macOS-26 export) | 1,121 | 455 | **2.47×** |
+| Qwen3-0.6B (macOS-27β re-export) | ~500 | 455 | **1.1×** |
 | Qwen3-8B | 94 | 90 | **1.05×** |
 
-Core AI's pipelined-GPU lead is large on **tiny** models — where its async-dispatch / overlap dominates — but **converges to a near-tie at a realistic 8B**, where both runtimes become memory-bandwidth-bound. So "Core AI is much faster" is a small-model effect; at usable sizes it's roughly MLX-equal (here, +5%). _(Matched: 512-token prompt, 512 gen, greedy, warm. Core AI via Apple's `llm-benchmark`; MLX via `mlx_lm`.)_
+Core AI's pipelined-GPU lead is large on **tiny** models — where its async-dispatch / overlap dominates — but **converges to a near-tie at a realistic 8B**, where both runtimes become memory-bandwidth-bound. _(Matched: 512-token prompt, 512 gen, greedy, warm. Core AI via Apple's `llm-benchmark`; MLX via `mlx_lm`.)_
+
+> ⚠️ **The 0.6B number is export-generation-dependent.** The same `coreai.llm.export`
+> recipe produces a 2.2× slower artifact after the macOS 27 beta upgrade (native
+> quantized-Linear lowering → explicit dequant ops; same runtime, same code, same
+> wheels). Forensics: [`methodology/coreai-export-lowering.md`](methodology/coreai-export-lowering.md).
+> Benchmark the artifact you ship.
+
+**Full official-recipe matrix (M4 Max, macOS 27β artifacts, `llm-benchmark` defaults 512p/1024g/5):**
+
+| Model | Artifact | Core AI decode (prefill) | MLX 0.31.3 decode (prefill) | Decode verdict |
+|---|---|---:|---:|---|
+| gpt-oss-20b (MoE, MXFP4) | 13 GB | 78.1 (1,252) | **100.2** (1,528) | **MLX +28%** |
+| qwen3-0.6b | 335 MB | **484** (9,396) | 432 (9,366) | **Core AI +12%** |
+| qwen3-4b | 2.1 GB | 145.4 (**1,635**) | 145.8 (1,495) | tie |
+| qwen3-8b | 4.3 GB | **94.1** (912) | 90.0 (825) | **Core AI +5%** |
+| gemma3-4b-it | 2.1 GB | **141.5** (1,669) | 136.3 (1,631) | **Core AI +4%** |
+| mistral-7b-v0.3 | 3.8 GB | **101.7** (976) | 97.5 (918) | **Core AI +4%** |
+
+**Core AI matches or beats MLX on every dense model; MLX's one clear win is the MoE**
+(expert dispatch, not the core engine). gpt-oss-20b bonus: `COREAI_CHUNK_THRESHOLD` is a
+memory dial — unchunked 4096-token prefill hits 1,439 tok/s (+16%) at 18 GB dirty
+footprint, chunk-128 (the `llm-runner` MoE hint) caps memory at 1.7 GB for 766 tok/s.
+Raw logs + env pins: [`results/raw/2026-06-11-m4max-coreai-matrix/`](results/raw/2026-06-11-m4max-coreai-matrix/).
 
 ---
 

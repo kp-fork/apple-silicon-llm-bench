@@ -21,18 +21,22 @@ mpl.rcParams.update({
 })
 
 # Measured on M4 Max, matched (512/512/greedy/warm), 4-bit. decode tok/s.
+# 0.6B carries TWO Core AI bars: the same export recipe lowers differently across
+# the macOS 26 -> 27 beta boundary (methodology/coreai-export-lowering.md).
 SIZES = ["Qwen3-0.6B", "Qwen3-8B"]
-CORE_AI = [1120.8, 94.3]
+CORE_AI = [1120.8, 94.3]          # macOS-26-era artifacts
+CORE_AI_27B = [500.0, 94.1]       # macOS-27β re-exports (8B unchanged)
 MLX = [454.6, 89.7]
 RATIO = [c / m for c, m in zip(CORE_AI, MLX)]
 
-x = np.arange(len(SIZES)); w = 0.34
+x = np.arange(len(SIZES)); w = 0.24
 fig, ax = plt.subplots(figsize=(8.0, 4.6))
-b1 = ax.bar(x - w / 2, CORE_AI, w, label="Core AI · GPU (pipelined)", color="#e11d48", edgecolor="white")
-b2 = ax.bar(x + w / 2, MLX, w, label="MLX · GPU", color="#7c3aed", edgecolor="white")
+b1 = ax.bar(x - w, CORE_AI, w, label="Core AI · GPU (macOS-26 export)", color="#e11d48", edgecolor="white")
+b1b = ax.bar(x, CORE_AI_27B, w, label="Core AI · GPU (macOS-27β re-export)", color="#fb7185", edgecolor="white")
+b2 = ax.bar(x + w, MLX, w, label="MLX · GPU", color="#7c3aed", edgecolor="white")
 ax.set_yscale("log")
 ax.set_ylim(40, 1900)
-for bars in (b1, b2):
+for bars in (b1, b1b, b2):
     for r in bars:
         ax.text(r.get_x() + r.get_width() / 2, r.get_height() * 1.04,
                 f"{r.get_height():.0f}", ha="center", va="bottom", fontsize=10, fontweight="bold")
