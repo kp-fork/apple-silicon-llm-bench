@@ -1,0 +1,32 @@
+{
+  "averages" : {
+    "generation_tps" : 55.02742982046978,
+    "prompt_tps" : 577.7112053285243
+  },
+  "generation_tokens" : 1024,
+  "model" : "gemma_3_12b_it_4bit_dynamic",
+  "num_trials" : 5,
+  "prompt_tokens" : 512,
+  "trials" : [
+    {
+      "gen_tps" : 55.11873197174979,
+      "prompt_tps" : 578.2640206670928
+    },
+    {
+      "gen_tps" : 55.14969361393638,
+      "prompt_tps" : 578.9868486224511
+    },
+    {
+      "gen_tps" : 54.6721189105465,
+      "prompt_tps" : 578.8752366867644
+    },
+    {
+      "gen_tps" : 55.07064710428449,
+      "prompt_tps" : 573.1314947789904
+    },
+    {
+      "gen_tps" : 55.1259575018317,
+      "prompt_tps" : 579.2984258873224
+    }
+  ]
+}

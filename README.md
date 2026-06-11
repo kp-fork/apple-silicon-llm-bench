@@ -45,6 +45,13 @@ Core AI's pipelined-GPU lead is large on **tiny** models — where its async-dis
 > quantized-Linear lowering → explicit dequant ops; same runtime, same code, same
 > wheels). Forensics: [`methodology/coreai-export-lowering.md`](methodology/coreai-export-lowering.md).
 > Benchmark the artifact you ship.
+>
+> **Confirmed on iPhone 17 Pro** (both artifacts AOT-compiled `--architecture h18p`,
+> GPU, synthetic 512p/1024g — deeper-KV protocol, NOT comparable to the short-chat
+> table above): macOS-26 artifact **115.1 tok/s** decode / 5,807 prefill / 0.22 GB
+> footprint vs 27β artifact 57.2 / 1,519 / 0.47 GB — **~2× decode, 3.8× prefill,
+> half the memory, from the export environment alone.** ANE (official iOS static
+> preset, same protocol): 69.6 tok/s, 0.045 s warm load.
 
 **Full official-recipe matrix (M4 Max, macOS 27β artifacts, `llm-benchmark` defaults 512p/1024g/5):**
 
@@ -55,6 +62,7 @@ Core AI's pipelined-GPU lead is large on **tiny** models — where its async-dis
 | qwen3-4b | 2.1 GB | 145.4 (**1,635**) | 145.8 (1,495) | tie |
 | qwen3-8b | 4.3 GB | **94.1** (912) | 90.0 (825) | **Core AI +5%** |
 | gemma3-4b-it | 2.1 GB | **141.5** (1,669) | 136.3 (1,631) | **Core AI +4%** |
+| gemma3-12b-it | 6.2 GB | 55.0 (**578**) | 55.1 (528) | tie |
 | mistral-7b-v0.3 | 3.8 GB | **101.7** (976) | 97.5 (918) | **Core AI +4%** |
 
 **Core AI matches or beats MLX on every dense model; MLX's one clear win is the MoE**

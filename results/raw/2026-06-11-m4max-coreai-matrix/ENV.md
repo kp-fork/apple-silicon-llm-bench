@@ -18,3 +18,7 @@
 
 ## Caveat: export-lowering sensitivity
 All Core AI artifacts in this directory were exported on macOS 27β (2026-06-11). A macOS-26-era artifact of the same qwen3-0.6b recipe decodes 2.2x faster — see methodology/coreai-export-lowering.md and qwen3-0.6b_artifact_generations_p128g256.log.
+
+## Artifact hashes (macOS-26-era, archived)
+- qwen3_0_6b_dynamic main.mlirb (native quantized-Linear lowering, 1116 tok/s): f7a8357f50292f4425591fb0ed2ef4c89c91b658498d89e7e8b516eca0e89554
+- qwen3_0_6b_ios main.mlirb (static iOS, same era): 79d4c7602293cd1c0acf82936a5871e8e9a6012e8613027edb027ddfc5097ada
