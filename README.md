@@ -73,6 +73,8 @@ per-trial JSONs + env pins in `results/raw/`). gpt-oss-20b bonus: `COREAI_CHUNK_
 memory dial — unchunked 4096-token prefill hits 1,439 tok/s (+16%) at 18 GB dirty
 footprint, chunk-128 (the `llm-runner` MoE hint) caps memory at 1.7 GB for 766 tok/s.
 Raw logs + env pins: [`results/raw/2026-06-11-m4max-coreai-matrix/`](results/raw/2026-06-11-m4max-coreai-matrix/).
+**Every bundle measured here is downloadable** (hashes + env stamps on the cards, incl.
+the irreproducible macOS-26 0.6B artifact): [HF `<model>-CoreAI-official` repos](https://huggingface.co/mlboydaisuke).
 
 ---
 
