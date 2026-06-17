@@ -35,13 +35,17 @@ median n=3 where it runs):
 
 | Model | LiteRT (`.litertlm`, ours) | MLX 4-bit | GGUF |
 |---|---|---|---|
-| **MiniCPM5-1B** | ✅ **runs — 239 tok/s** (CPU, ~610 MB) | `mlx-community/MiniCPM5-1B-4bit` ✅ **526 tok/s** | none on HF |
-| **LFM2.5-350M** | ⚠️ **loads but fails to invoke** (`INTERNAL: Failed to invoke the compiled model`, litert-lm 0.13.1 macOS) | `mlx-community/LFM2-350M-4bit` (v2.0 ✅ 1024 tok/s) | `LiquidAI/LFM2.5-350M-GGUF` ✅ |
+| **MiniCPM5-1B** | ⚠️ **runs (239 tok/s) but output is garbage** — `<\|fim_prefix\|>` loop, **0/8** quality, degenerate | `mlx-community/MiniCPM5-1B-4bit` ✅ **526 tok/s, 7/8** | none on HF |
+| **LFM2.5-350M** | ⚠️ **loads but fails to invoke** (`INTERNAL: Failed to invoke the compiled model`, litert-lm 0.13.1 macOS) | `mlx-community/LFM2-350M-4bit` (v2.0 ✅ 1024 tok/s, 7/8) | `LiquidAI/LFM2.5-350M-GGUF` ✅ |
 
-- **MiniCPM5-1B** is a genuine cross-runtime LiteRT-vs-MLX pair on a Lu-named model — the conversion works.
-- **LFM2.5-350M**: the litert bundle loads but the 0.13.1 runtime executor can't invoke it (LFM2's hybrid
-  conv/attention ops, likely). A finding for both the conversion and litert-lm's LFM2 support; the iPhone
-  Metal-GPU path is untested (may differ — that's what 実機 will tell us).
+- **Neither of our litert conversions produces usable output on litert-lm 0.13.1 (macOS)** — caught by the
+  quality guardrail ([`QUALITY.md`](QUALITY.md)), which is exactly why speed alone isn't enough:
+  - **MiniCPM5-1B** *runs* (239 tok/s) but emits a `<|fim_prefix|>` special-token loop (0/8) — a
+    tokenizer / special-token / chat-template bug in the conversion, not a speed result.
+  - **LFM2.5-350M** doesn't even invoke (`Failed to invoke the compiled model`) — likely the runtime
+    doesn't execute LFM2's hybrid conv/attention ops.
+  - Both **MLX** variants answer correctly (7/8), so it's the litert path, not the models. Actionable
+    feedback for the conversions; the iPhone Metal-GPU path is untested (may differ — that's what 実機 tells us).
 - MLX LFM comparator is **LFM2-350M (v2.0)**, not 2.5 (no 2.5 on mlx-community) — a version skew, disclosed.
 
 > Quant is each runtime's native 4-bit (LiteRT mixed-INT4 / MLX Q4 / GGUF Q4_K_M) — disclosed per

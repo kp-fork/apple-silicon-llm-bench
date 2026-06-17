@@ -279,7 +279,10 @@ public actor BenchmarkRunner {
             task: configuration.task.id,
             parameters: configuration.task.parameters,
             metrics: metrics,
-            outputSample: String(collectedOutput.prefix(200))
+            // Keep the full output for the quality task (it's scored for correctness +
+            // degeneracy); other tasks keep a short sample to stay lean.
+            outputSample: configuration.task.id == "quality"
+                ? collectedOutput : String(collectedOutput.prefix(200))
         )
     }
 

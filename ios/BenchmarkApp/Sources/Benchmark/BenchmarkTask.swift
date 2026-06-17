@@ -35,6 +35,7 @@ public enum BenchmarkTaskCatalog {
         LongContextTask(id: "long-context-32k", targetTokens: 32768),
         SustainedGenerationTask(),
         EnergyTask(),
+        QualityTask(),
         AppLifecycleTask(),
     ]
 
