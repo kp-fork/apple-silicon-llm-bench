@@ -221,6 +221,29 @@ def md_energy(rows):
     return "\n".join(out)
 
 
+# Sustained/energy runs that did not complete — kept with their reason (fairness rule 4),
+# keyed by (runtime key, model). A note renders only when that runtime HAS short-chat data
+# but is absent from both the throttle and energy tables, so it never shows spuriously
+# (e.g. Gemma, where LiteRT-LM's sustained run does complete, gets no note).
+SUSTAINED_FAILURES = {
+    ("litert-lm", "qwen3-0.6b"):
+        "**LiteRT-LM / GPU** is absent from the two tables above: its 600 s *continuous* Qwen3-0.6B "
+        "run does not complete on v0.13.1 — generation hangs with `DEADLINE_EXCEEDED` raised in the "
+        "callback thread pool (the Metal top-k sampler `libLiteRtTopKMetalSampler.dylib` is not on the "
+        "sustained path). The 128-token short-chat run above is unaffected — only long continuous "
+        "generation hangs. Kept here with its cause (fairness rule 4): a reproducible finding for the "
+        "LiteRT team, not a harness issue — the same adapter drives the short-chat run that passes.",
+}
+
+
+def md_sustained_gap(rows, model):
+    """Note runtimes that produced short-chat data but no sustained/energy run (fairness rule 4)."""
+    have = {r["label"] for r in rows["throttle"]} | {r["label"] for r in rows["energy"]}
+    notes = [SUSTAINED_FAILURES[(r["key"], model)] for r in rows["throughput"]
+             if r["label"] not in have and (r["key"], model) in SUSTAINED_FAILURES]
+    return ("> ⚠️ " + "\n>\n> ".join(notes)) if notes else None
+
+
 def md_synthesis(rows, model):
     """Where LiteRT-LM wins / has room to grow, straight from the numbers."""
     tp = rows["throughput"]
@@ -383,6 +406,9 @@ def main():
             if rows["energy"]:
                 parts.append("### Energy — battery-delta, 600 s run\n")
                 parts.append(md_energy(rows) + "\n")
+            gap = md_sustained_gap(rows, model)
+            if gap and (rows["throttle"] or rows["energy"]):
+                parts.append(gap + "\n")
 
             all_raw += rows["raw"]
 

@@ -80,6 +80,22 @@ Conditions: **fair** (0.13.1 · Release · 128-token cap · phys_footprint). Lit
 
 > _Decode reads ≈ all active weights once per token, so **tok/s × weight-bytes = effective read bandwidth** (~0.35 GB/token at 4-bit, scaled per row by quant — the **INT8** row reads ~2×). Against ~77 GB/s (LPDDR5X, public-teardown **estimate**), this ranks how well each runtime works the memory system. Absolute GB/s carries the byte estimate; the same-device ordering is robust._
 
+### Sustained throttling — 600 s continuous, unplugged
+
+| Runtime | Cold burst tok/s | Sustained tok/s | Retained | t→−10% | t→−25% | Thermal (init→peak) |
+|---|---:|---:|---:|---:|---:|:--|
+| MLX-Swift / GPU | 130.5 | 86.0 | 66% | 32s | 42s | nominal→fair |
+| CoreML / ANE | 37.7 | 30.1 | 80% | 1s | — | fair→serious |
+
+### Energy — battery-delta, 600 s run
+
+| Runtime | J / token | Tokens / 1% battery | Avg pkg power W | Δbattery | Thermal (init→peak) |
+|---|---:|---:|---:|---:|:--|
+| MLX-Swift / GPU | 0.066 | 8,960 | 6.18 | 5% | nominal→fair |
+| CoreML / ANE | 0.252 | 2,355 | 6.18 | 5% | fair→serious |
+
+> ⚠️ **LiteRT-LM / GPU** is absent from the two tables above: its 600 s *continuous* Qwen3-0.6B run does not complete on v0.13.1 — generation hangs with `DEADLINE_EXCEEDED` raised in the callback thread pool (the Metal top-k sampler `libLiteRtTopKMetalSampler.dylib` is not on the sustained path). The 128-token short-chat run above is unaffected — only long continuous generation hangs. Kept here with its cause (fairness rule 4): a reproducible finding for the LiteRT team, not a harness issue — the same adapter drives the short-chat run that passes.
+
 
 ---
 
@@ -136,6 +152,7 @@ Conditions: **pre-fair** (Debug · ran to EOS · re-capture pending). LiteRT fil
 - [`iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run1.jsonl)
 - [`iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run2.jsonl)
 - [`iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run3.jsonl`](../../results/raw/iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run3.jsonl)
+- [`iphone17pro-coreml-llm-qwen3-0.6b-energy-tg128.jsonl`](../../results/raw/iphone17pro-coreml-llm-qwen3-0.6b-energy-tg128.jsonl)
 - [`iphone17pro-coreml-llm-qwen3-0.6b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-coreml-llm-qwen3-0.6b-short-chat-run1.jsonl)
 - [`iphone17pro-coreml-llm-qwen3-0.6b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-coreml-llm-qwen3-0.6b-short-chat-run2.jsonl)
 - [`iphone17pro-coreml-llm-qwen3-0.6b-short-chat-run3.jsonl`](../../results/raw/iphone17pro-coreml-llm-qwen3-0.6b-short-chat-run3.jsonl)
@@ -153,6 +170,7 @@ Conditions: **pre-fair** (Debug · ran to EOS · re-capture pending). LiteRT fil
 - [`iphone17pro-mlx-gemma-4-e2b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-mlx-gemma-4-e2b-short-chat-run2.jsonl)
 - [`iphone17pro-mlx-gemma-4-e2b-short-chat-run3.jsonl`](../../results/raw/iphone17pro-mlx-gemma-4-e2b-short-chat-run3.jsonl)
 - [`iphone17pro-mlx-swift-gemma-4-e2b-energy-tg128.jsonl`](../../results/raw/iphone17pro-mlx-swift-gemma-4-e2b-energy-tg128.jsonl)
+- [`iphone17pro-mlx-swift-qwen3-0.6b-energy-tg128.jsonl`](../../results/raw/iphone17pro-mlx-swift-qwen3-0.6b-energy-tg128.jsonl)
 - [`iphone17pro-mlx-swift-qwen3-0.6b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-mlx-swift-qwen3-0.6b-short-chat-run1.jsonl)
 - [`iphone17pro-mlx-swift-qwen3-0.6b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-mlx-swift-qwen3-0.6b-short-chat-run2.jsonl)
 - [`iphone17pro-mlx-swift-qwen3-0.6b-short-chat-run3.jsonl`](../../results/raw/iphone17pro-mlx-swift-qwen3-0.6b-short-chat-run3.jsonl)
