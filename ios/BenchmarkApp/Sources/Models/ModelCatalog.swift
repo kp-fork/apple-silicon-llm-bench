@@ -66,6 +66,22 @@ public enum ModelCatalog {
             hfRepoId: "mlx-community/Qwen3-0.6B-4bit"
         ),
         ModelInfo(
+            id: "mlx-community/Qwen3-4B-4bit",
+            displayName: "Qwen3-4B (4-bit)",
+            quantization: "Q4",
+            parameterCountB: 4.0,
+            onDiskSizeMB: 2300,
+            hfRepoId: "mlx-community/Qwen3-4B-4bit"
+        ),
+        ModelInfo(
+            id: "mlx-community/Qwen3-8B-4bit",
+            displayName: "Qwen3-8B (4-bit)",
+            quantization: "Q4",
+            parameterCountB: 8.0,
+            onDiskSizeMB: 4500,
+            hfRepoId: "mlx-community/Qwen3-8B-4bit"
+        ),
+        ModelInfo(
             id: "mlx-community/Qwen3.5-0.8B-MLX-4bit",
             displayName: "Qwen 3.5 0.8B (4-bit)",
             quantization: "Q4",
@@ -218,6 +234,26 @@ public enum ModelCatalog {
             hfFilePatterns: ["Qwen3.5-9B-Q4_K_M.gguf"],
             primaryFile: "Qwen3.5-9B-Q4_K_M.gguf"
         ),
+        ModelInfo(
+            id: "unsloth/Qwen3-4B-GGUF/Q4_K_M",
+            displayName: "Qwen3-4B Q4_K_M (GGUF)",
+            quantization: "Q4_K_M",
+            parameterCountB: 4.0,
+            onDiskSizeMB: 2500,
+            hfRepoId: "unsloth/Qwen3-4B-GGUF",
+            hfFilePatterns: ["Qwen3-4B-Q4_K_M.gguf"],
+            primaryFile: "Qwen3-4B-Q4_K_M.gguf"
+        ),
+        ModelInfo(
+            id: "unsloth/Qwen3-8B-GGUF/Q4_K_M",
+            displayName: "Qwen3-8B Q4_K_M (GGUF)",
+            quantization: "Q4_K_M",
+            parameterCountB: 8.0,
+            onDiskSizeMB: 4900,
+            hfRepoId: "unsloth/Qwen3-8B-GGUF",
+            hfFilePatterns: ["Qwen3-8B-Q4_K_M.gguf"],
+            primaryFile: "Qwen3-8B-Q4_K_M.gguf"
+        ),
     ]
 
     /// Models the LiteRT-LM adapter can load.
@@ -259,6 +295,29 @@ public enum ModelCatalog {
             hfRepoId: "litert-community/Qwen3-0.6B",
             hfFilePatterns: ["qwen3_0_6b_mixed_int4.litertlm"],
             primaryFile: "qwen3_0_6b_mixed_int4.litertlm"
+        ),
+        // Qwen3 4B / 8B — same mixed-INT4 .litertlm line as 0.6B, for a size-scaling
+        // curve (0.6B → 4B → 8B). 8B (~4.4 GB) is desktop/Mac-tier; on phones it can
+        // exceed the per-app memory ceiling (gemma-3n-style jetsam), so it stays Mac-only.
+        ModelInfo(
+            id: "litert-community/Qwen3-4B",
+            displayName: "Qwen3 4B (.litertlm)",
+            quantization: "INT4 (mixed, blockwise gs32)",
+            parameterCountB: 4.0,
+            onDiskSizeMB: 2300,
+            hfRepoId: "litert-community/Qwen3-4B",
+            hfFilePatterns: ["qwen3_4b_mixed_int4.litertlm"],
+            primaryFile: "qwen3_4b_mixed_int4.litertlm"
+        ),
+        ModelInfo(
+            id: "litert-community/Qwen3-8B",
+            displayName: "Qwen3 8B (.litertlm)",
+            quantization: "INT4 (mixed, blockwise gs32)",
+            parameterCountB: 8.0,
+            onDiskSizeMB: 4400,
+            hfRepoId: "litert-community/Qwen3-8B",
+            hfFilePatterns: ["qwen3_8b_mixed_int4.litertlm"],
+            primaryFile: "qwen3_8b_mixed_int4.litertlm"
         ),
         ModelInfo(
             id: "litert-community/gemma-4-E4B-it-litert-lm",

@@ -73,11 +73,20 @@ def quant_factor(quant):
     return 1.0   # INT4 / 4-bit / Q4 / Q4_K_M / QAT
 
 
+# Devices whose LiteRT-LM rows are NOT GPU and so don't belong in the GPU-framed
+# per-device tables. On Apple-Silicon macOS, LiteRT-LM's GPU backend fails to start
+# (OpenCL context creation fails) and it runs CPU-only — covered separately in
+# docs/litert-lm/MACOS_DESKTOP.md so this package's "/ GPU" framing stays accurate.
+SEPARATE_DEVICES = {"m4max"}
+
+
 def discover():
     """{device: [models]} from LiteRT-LM short-chat run1 files."""
     out = {}
     for p in sorted(RAW.glob("*-litert-lm-*-short-chat-run1.jsonl")):
         dev, rest = p.name.split("-litert-lm-", 1)
+        if dev in SEPARATE_DEVICES:
+            continue
         model = rest.split("-short-chat-run1.jsonl")[0]
         out.setdefault(dev, [])
         if model not in out[dev]:
@@ -356,6 +365,10 @@ Release build, `phys_footprint`, one device per table. **Disclosed, not equalise
 
 Methodology: [thermal](../../methodology/thermal.md) · [energy (iOS)](../../methodology/energy-ios.md)
 · [fairness rules](../../methodology/fairness-rules.md) · [runtime notes](../../runtimes/litert-lm.md)
+
+**Desktop / macOS:** on Apple-Silicon macOS LiteRT-LM's GPU backend fails to start and it runs
+CPU-only — Qwen3 0.6B/4B/8B scaling (LiteRT-CPU vs MLX-Metal-GPU) and the finding are in
+[`MACOS_DESKTOP.md`](MACOS_DESKTOP.md).
 """
 
 FOOTER_REPRO = """## Reproduce / add a device

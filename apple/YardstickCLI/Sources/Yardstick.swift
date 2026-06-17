@@ -172,6 +172,11 @@ struct YardstickApp {
         switch id {
         case "mlx-swift", "mlx":
             return MLXRuntime()
+        // These adapters pull vendored SDKs not yet wired into the SwiftPM macOS
+        // build (CoreMLLLM / executorch / llama.xcframework / AnemllCore); the
+        // xcodebuild target still ships them. YARDSTICK_SPM is defined only for the
+        // SwiftPM CLI, where their sources are excluded from YardstickKit.
+        #if !YARDSTICK_SPM
         case "coreml-llm", "coreml":
             return CoreMLRuntime()
         case "executorch", "et":
@@ -180,6 +185,7 @@ struct YardstickApp {
             return LlamaCppRuntime()
         case "anemll":
             return AnemllRuntime()
+        #endif
         case "apple-fm", "apple", "fm", "foundation-models":
             return AppleFMRuntime()
         case "litert-lm", "mediapipe":

@@ -24,11 +24,13 @@ let package = Package(
         .package(url: "https://github.com/ml-explore/mlx-swift-lm", branch: "main"),
         .package(url: "https://github.com/huggingface/swift-huggingface", from: "0.8.1"),
         .package(url: "https://github.com/huggingface/swift-transformers", from: "1.0.0"),
-        // LiteRT-LM ships a binary xcframework, so unlike the vendored adapters
-        // it wires up as a plain SPM dependency on both targets. Pinned to match
-        // the version vendored in ios/BenchmarkApp (Vendored/LiteRT-LM @ v0.13.1)
-        // so the iOS build, which resolves this graph too, stays consistent.
-        .package(url: "https://github.com/google-ai-edge/LiteRT-LM", from: "0.13.0"),
+        // LiteRT-LM ships a binary xcframework. SwiftPM rejects its
+        // `.unsafeFlags(["-Xlinker","-all_load"])` from a versioned/remote product, so
+        // (like the iOS project) depend on the LOCAL vendored clone — local path packages
+        // are allowed to carry unsafe flags. `bootstrap.sh` clones it to this path
+        // (GIT_LFS_SKIP_SMUDGE=1, skipping a broken upstream Android LFS object); the
+        // iOS/macOS xcframeworks are remote binaryTargets fetched by SwiftPM.
+        .package(path: "ios/BenchmarkApp/Vendored/LiteRT-LM"),
     ],
     targets: [
         .target(
@@ -63,13 +65,24 @@ let package = Package(
                 // wires it via XcodeGen. Excluded here like the other
                 // vendor-SDK adapters so the macOS YardstickKit lib still builds.
                 "Runtimes/CoreAIRuntime.swift",
+                // VLM / camera adapters pull MLXVLM + AVFoundation (UI-only); the
+                // text-LLM CLI doesn't need them, and MLXVLM isn't a CLI dependency.
+                "Runtimes/MLXVLMRuntime.swift",
+                "Runtimes/VLMRuntime.swift",
+                "Runtimes/CoreMLVLMRuntime.swift",
+                "Benchmark/CameraVLMTask.swift",
+                "Models/VLMRunResult.swift",
+                "Vision",
             ]
         ),
 
         .executableTarget(
             name: "YardstickCLI",
             dependencies: ["YardstickKit"],
-            path: "apple/YardstickCLI/Sources"
+            path: "apple/YardstickCLI/Sources",
+            // The SwiftPM macOS CLI ships only the adapters wired for it (MLX +
+            // LiteRT-LM + Apple FM); gate out the xcodebuild-only runtimes.
+            swiftSettings: [.define("YARDSTICK_SPM")]
         ),
     ]
 )

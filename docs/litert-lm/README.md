@@ -51,6 +51,10 @@ Release build, `phys_footprint`, one device per table. **Disclosed, not equalise
 Methodology: [thermal](../../methodology/thermal.md) · [energy (iOS)](../../methodology/energy-ios.md)
 · [fairness rules](../../methodology/fairness-rules.md) · [runtime notes](../../runtimes/litert-lm.md)
 
+**Desktop / macOS:** on Apple-Silicon macOS LiteRT-LM's GPU backend fails to start and it runs
+CPU-only — Qwen3 0.6B/4B/8B scaling (LiteRT-CPU vs MLX-Metal-GPU) and the finding are in
+[`MACOS_DESKTOP.md`](MACOS_DESKTOP.md).
+
 
 ---
 
