@@ -208,6 +208,9 @@ struct YardstickApp {
         case "lifecycle":
             return AppLifecycleTask()
         default:
+            // Resolve any other registered task by id (e.g. long-context-8k /
+            // long-context-32k sweep variants, energy) from the shared catalog.
+            if let t = BenchmarkTaskCatalog.task(for: id) { return t }
             throw CLIError.invalidArgument(
                 "unknown task '\(id)' — see `yardstick list`"
             )

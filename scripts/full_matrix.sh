@@ -121,14 +121,21 @@ seed_mlx_hub() {   # $1 hf-repo -> seed blobs+refs (HubClient rebuilds snapshots
     "Library/Caches/huggingface/hub/models--$(echo "$1" | tr '/' '--')"
 }
 
-iphone() {   # plugged jobs: short-chat + long-context, n=3 cold
+# Plugged tasks (no battery needed): "task-id:runs:timeout". short-chat = tight median;
+# long-context sweep (2K/8K/32K) = prefill scaling + decode-at-depth; sustained-generation
+# = decode-degradation over a 512-token continuous decode (NOT the hanging sustainSeconds path).
+PLUGGED_TASKS=( "short-chat:3:360" "long-context:2:600" "long-context-8k:2:900" \
+                "long-context-32k:1:1500" "sustained-generation:1:600" )
+
+iphone() {   # plugged jobs: short-chat + long-context sweep + sustained-generation, cold
   : "${UDID:?set UDID=<device-udid>}"
-  for task in short-chat long-context; do
+  for spec in "${PLUGGED_TASKS[@]}"; do
+    IFS=':' read -r task n to <<<"$spec"
     for job in "${IPHONE_JOBS[@]}"; do
       IFS='|' read -r rt mid repo glob <<<"$job"
-      echo "########## iphone $rt $mid ($task) ##########"
-      for run in 1 2 3; do
-        timeout "$PER_RUN_TIMEOUT" xcrun devicectl device process launch --console --terminate-existing \
+      echo "########## iphone $rt $mid ($task, n=$n) ##########"
+      for run in $(seq 1 "$n"); do
+        timeout "$to" xcrun devicectl device process launch --console --terminate-existing \
           --device "$UDID" "$APP" -- --yardstick-autorun --runtime "$rt" --model-id "$mid" \
           --task "$task" --runs 1 2>&1 | grep -iE "YARDSTICK_RUN_OK|YARDSTICK_RUN_FAIL|signal 1[15]|no such" | tail -2
         sleep 6
@@ -153,19 +160,17 @@ iphone_energy() {   # UNPLUGGED — battery must drain; run with the phone OFF U
   done
 }
 
-mac() {   # litert + mlx via the CLI; short-chat + long-context + sustained
+mac() {   # litert + mlx via the CLI; short-chat + long-context sweep + sustained-generation
   [ -x "$YS" ] || { echo "CLI missing — run: $0 build"; return 1; }
-  for task in short-chat long-context sustained; do
+  for spec in "${PLUGGED_TASKS[@]}"; do
+    IFS=':' read -r task n to <<<"$spec"
     for job in "${MAC_JOBS[@]}"; do
       IFS='|' read -r rt mid repo glob <<<"$job"
-      # litert sustained hangs (same callback_thread_pool DEADLINE_EXCEEDED as iOS energy).
-      [ "$task" = "sustained" ] && [ "$rt" = "litert-lm" ] && { echo "## skip litert sustained ($mid) — known hang"; continue; }
       local out="m4max-$(rt_token "$rt")-$(model_token "$mid")-${task}"
-      echo "########## mac $rt $mid ($task) ##########"
-      local n=3; [ "$task" = "sustained" ] && n=1
-      for run in $(seq 1 $n); do
+      echo "########## mac $rt $mid ($task, n=$n) ##########"
+      for run in $(seq 1 "$n"); do
         local f="$RAW/${out}-run${run}.jsonl"; rm -f "$f"
-        GIT_LFS_SKIP_SMUDGE=1 timeout "$PER_RUN_TIMEOUT" "$YS" run --task "$task" \
+        GIT_LFS_SKIP_SMUDGE=1 timeout "$to" "$YS" run --task "$task" \
           --runtime "$rt" --model "$mid" --output "$f" 2>&1 | grep -iE "decode=|TTFT=|FAILED|^error" | tail -2
       done
     done

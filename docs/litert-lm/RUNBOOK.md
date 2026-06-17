@@ -9,7 +9,15 @@ nothing runs by itself. Phases are idempotent. Find the UDID with `xcrun devicec
 | Runtimes | litert-lm · mlx-swift · llama-cpp · coreml-llm | litert-lm · mlx-swift¹ |
 | Qwen3 | 0.6B · 4B · (8B attempted²) | 0.6B · 4B · 8B |
 | Gemma | 4-E2B (litert/mlx/llama/coreml) | 4-E2B (litert/mlx) |
-| Tasks | short-chat ·  long-context (n=3 cold) · energy (unplugged) | short-chat · long-context (n=3) · sustained |
+| Tasks | short-chat · **long-context sweep** (2K/8K/32K) · sustained-generation · energy (unplugged) | short-chat · long-context sweep · sustained-generation |
+
+**Continuous / long-context tasks** (the "does it hold up under load" axis):
+- `long-context` / `long-context-8k` / `long-context-32k` — same task at growing prompt lengths →
+  prefill tok/s + TTFT scaling and **decode rate at KV depth** (is decode flat?). Nominal sizes are
+  approximate; the real `promptTokenCount` is recorded and used by the report.
+- `sustained-generation` — a 512-token continuous decode → decode-degradation curve
+  (`decodeRateRollingWindow`). This is a *finite* decode and does **not** hit the `sustainSeconds`
+  hang; only the unplugged `energy` task (continuous re-prompting) does, and litert is skipped there.
 
 ¹ The SwiftPM CLI ships MLX + LiteRT-LM only. llama.cpp / CoreML on Mac use the **xcodebuild**
 target — but it currently can't co-build with LiteRT-macOS (an `executorch`×`CLiteRTLM_mac`

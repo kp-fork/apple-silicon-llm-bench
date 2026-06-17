@@ -30,7 +30,9 @@ public extension BenchmarkTask {
 public enum BenchmarkTaskCatalog {
     public static let all: [any BenchmarkTask] = [
         ShortChatTask(),
-        LongContextTask(),
+        LongContextTask(),                                              // ~2K
+        LongContextTask(id: "long-context-8k", targetTokens: 8192),
+        LongContextTask(id: "long-context-32k", targetTokens: 32768),
         SustainedGenerationTask(),
         EnergyTask(),
         AppLifecycleTask(),
