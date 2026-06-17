@@ -138,7 +138,10 @@ seed_mlx_hub() {   # $1 hf-repo -> seed blobs+refs (HubClient rebuilds snapshots
 # long-context sweep (2K/8K/32K) = prefill scaling + decode-at-depth; sustained-generation
 # = decode-degradation over a 512-token continuous decode (NOT the hanging sustainSeconds path).
 PLUGGED_TASKS=( "short-chat:3:360" "long-context:2:600" "long-context-8k:2:900" \
-                "long-context-32k:1:1500" "sustained-generation:1:600" )
+                "sustained-generation:1:600" )
+# NOTE: long-context-32k is deliberately NOT in the routine sweep — at ~32K the KV cache
+# explodes (≈105 GB even on a 0.6B model), so it OOMs on ≥4B. Run it manually as a small-model
+# ceiling probe only:  $YS run --task long-context-32k --runtime mlx-swift --model <0.6B>.
 
 iphone() {   # plugged jobs: short-chat + long-context sweep + sustained-generation, cold
   : "${UDID:?set UDID=<device-udid>}"

@@ -12,9 +12,12 @@ nothing runs by itself. Phases are idempotent. Find the UDID with `xcrun devicec
 | Tasks | short-chat · **long-context sweep** (2K/8K/32K) · sustained-generation · energy (unplugged) | short-chat · long-context sweep · sustained-generation |
 
 **Continuous / long-context tasks** (the "does it hold up under load" axis):
-- `long-context` / `long-context-8k` / `long-context-32k` — same task at growing prompt lengths →
-  prefill tok/s + TTFT scaling and **decode rate at KV depth** (is decode flat?). Nominal sizes are
-  approximate; the real `promptTokenCount` is recorded and used by the report.
+- `long-context` / `long-context-8k` — same task at growing prompt lengths → prefill tok/s + TTFT
+  scaling and **decode rate at KV depth** (is decode flat?). Nominal sizes are approximate; the real
+  `promptTokenCount` is recorded and used by the report. (Early data: decode falls off sharply with
+  context — e.g. mlx Qwen3-0.6B 390→219 tok/s from ~2.7K→10.7K tokens.)
+- `long-context-32k` — a **0.6B-only ceiling probe**, NOT in the routine sweep: at ~32K the KV cache
+  explodes (~105 GB even on a 0.6B model with mlx), so it OOMs on ≥4B. Run it by hand on small models.
 - `sustained-generation` — a 512-token continuous decode → decode-degradation curve
   (`decodeRateRollingWindow`). This is a *finite* decode and does **not** hit the `sustainSeconds`
   hang; only the unplugged `energy` task (continuous re-prompting) does, and litert is skipped there.
