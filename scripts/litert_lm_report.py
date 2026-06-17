@@ -39,8 +39,10 @@ RUNTIMES = [
 # bound, so tok/s × this ≈ effective read bandwidth. Per-row quant scaling (below) adjusts
 # rows that aren't 4-bit. Gemma E2B = 0.79 GB INT4 decoder (litert catalog breakdown);
 # Qwen3-0.6B ≈ 0.35 GB (the 498 MB mixed-INT4 artifact minus its INT8 embedding table).
-MODEL_DECODE_GB = {"gemma-4-e2b": 0.79, "qwen3-0.6b": 0.35}
-MODEL_LABEL = {"gemma-4-e2b": "Gemma 4 E2B", "qwen3-0.6b": "Qwen3-0.6B"}
+# Active 4-bit weight bytes streamed per decode token (GB). Qwen3 dense ≈ params × 0.5 B.
+MODEL_DECODE_GB = {"gemma-4-e2b": 0.79, "qwen3-0.6b": 0.35, "qwen3-4b": 2.0, "qwen3-8b": 4.0}
+MODEL_LABEL = {"gemma-4-e2b": "Gemma 4 E2B", "qwen3-0.6b": "Qwen3-0.6B",
+               "qwen3-4b": "Qwen3-4B", "qwen3-8b": "Qwen3-8B"}
 
 # Device peak memory bandwidth (GB/s) = LPDDR5X data-rate × 64-bit bus / 8. Public-teardown
 # ESTIMATES, not Apple figures — flagged in the report; an obvious thing for Lu's team to pin.
@@ -392,7 +394,7 @@ def main():
     parts = [HEADER]
     all_raw = []
     # Fair (Release+capped) models first, newest comparison up top.
-    order = {"qwen3-0.6b": 0, "gemma-4-e2b": 1}
+    order = {"qwen3-0.6b": 0, "qwen3-4b": 0.1, "qwen3-8b": 0.2, "gemma-4-e2b": 1}
     for device in sorted(found):
         for model in sorted(found[device], key=lambda m: order.get(m, 9)):
             rows = collect(device, model)
