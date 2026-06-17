@@ -61,3 +61,11 @@ UDID=$UDID ./scripts/full_matrix.sh collect   # pull Documents/results -> /tmp/y
 
 On-device HF download stalls ~32 MB for large models, so side-load (Mac download → `devicectl copy to`)
 is **required**, not optional.
+
+## Extending the matrix
+Add a line to the `QWEN_*` / `GEMMA` arrays at the top of `full_matrix.sh`
+(`runtime|catalog-id|hf-repo|file-glob`) and the matching `ModelCatalog` entry, then re-`build`
+(Mac) / ⌘R (iPhone). Candidates already on `litert-community`: Qwen3-14B, Qwen3-4B-Instruct-2507,
+Gemma-4-E4B/12B, Gemma3-1B/4B (see [`MODEL_AVAILABILITY.md`](MODEL_AVAILABILITY.md)). 14B is Mac-tier
+only (phones jetsam). Quality-parity and a long-context *sweep* (multiple lengths) are still TODO
+(both need a Swift change + the one ⌘R).

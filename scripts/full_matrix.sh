@@ -158,6 +158,8 @@ mac() {   # litert + mlx via the CLI; short-chat + long-context + sustained
   for task in short-chat long-context sustained; do
     for job in "${MAC_JOBS[@]}"; do
       IFS='|' read -r rt mid repo glob <<<"$job"
+      # litert sustained hangs (same callback_thread_pool DEADLINE_EXCEEDED as iOS energy).
+      [ "$task" = "sustained" ] && [ "$rt" = "litert-lm" ] && { echo "## skip litert sustained ($mid) — known hang"; continue; }
       local out="m4max-$(rt_token "$rt")-$(model_token "$mid")-${task}"
       echo "########## mac $rt $mid ($task) ##########"
       local n=3; [ "$task" = "sustained" ] && n=1
