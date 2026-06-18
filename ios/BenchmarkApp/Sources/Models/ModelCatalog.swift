@@ -604,6 +604,38 @@ public enum ModelCatalog {
             onDiskSizeMB: 327,
             hfRepoId: ""
         ),
+        ModelInfo(
+            id: "core-ai/qwen3-4b-ane",
+            displayName: "Qwen3-4B (Core AI, ANE)",
+            quantization: "4-bit palettized (uniform g32)",
+            parameterCountB: 4.0,
+            onDiskSizeMB: 2954,
+            hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/qwen3-4b-gpu",
+            displayName: "Qwen3-4B (Core AI, GPU)",
+            quantization: "INT4 (dynamic)",
+            parameterCountB: 4.0,
+            onDiskSizeMB: 2159,
+            hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/qwen3-8b-ane",
+            displayName: "Qwen3-8B (Core AI, ANE)",
+            quantization: "4-bit palettized (uniform g32)",
+            parameterCountB: 8.0,
+            onDiskSizeMB: 5317,
+            hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/qwen3-8b-gpu",
+            displayName: "Qwen3-8B (Core AI, GPU)",
+            quantization: "INT4 (dynamic)",
+            parameterCountB: 8.0,
+            onDiskSizeMB: 4396,
+            hfRepoId: ""
+        ),
     ]
 
     /// Default model picked when the app first launches.
