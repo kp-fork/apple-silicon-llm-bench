@@ -26,13 +26,18 @@ REPO = Path(__file__).resolve().parent.parent
 RAW = REPO / "results" / "raw"
 OUT = REPO / "docs" / "litert-lm" / "README.md"
 
-# (canonical key, short-chat filename tokens to try, energy token, display label). MLX is
-# spelled `mlx-swift` in the fair Qwen3 files but `mlx` in older Gemma files — try both.
+# (canonical key, short-chat filename tokens to try, energy token, display label, model suffix).
+# MLX is spelled `mlx-swift` in the fair Qwen3 files but `mlx` in older Gemma files — try both.
+# Core AI exports two bundles whose compute unit is fixed by export shape, so its files carry a
+# `-gpu`/`-ane` suffix on the model token (e.g. `core-ai-qwen3-0.6b-gpu-...`); the suffix is
+# appended to the model when globbing so both land in the same model's comparison.
 RUNTIMES = [
-    ("litert-lm", ["litert-lm"], "litert-lm", "LiteRT-LM / GPU"),
-    ("mlx-swift", ["mlx-swift", "mlx"], "mlx-swift", "MLX-Swift / GPU"),
-    ("llama-cpp", ["llama-cpp"], "llama-cpp", "llama.cpp / GPU"),
-    ("coreml-llm", ["coreml-llm"], "coreml-llm", "CoreML / ANE"),
+    ("litert-lm", ["litert-lm"], "litert-lm", "LiteRT-LM / GPU", ""),
+    ("mlx-swift", ["mlx-swift", "mlx"], "mlx-swift", "MLX-Swift / GPU", ""),
+    ("llama-cpp", ["llama-cpp"], "llama-cpp", "llama.cpp / GPU", ""),
+    ("coreml-llm", ["coreml-llm"], "coreml-llm", "CoreML / ANE", ""),
+    ("core-ai-gpu", ["core-ai"], "core-ai", "Core AI / GPU", "-gpu"),
+    ("core-ai-ane", ["core-ai"], "core-ai", "Core AI / ANE", "-ane"),
 ]
 
 # Active weight bytes streamed per decode token at ~4-bit (GB). Decode is memory-bandwidth-
@@ -139,8 +144,8 @@ def fmt_t(v):
 # ---- per (device, model) assembly -------------------------------------------------
 def collect(device, model):
     rows = {"throughput": [], "throttle": [], "energy": [], "raw": [], "meta": None}
-    for key, sc_tokens, en_token, label in RUNTIMES:
-        scs = short_chat_runs(device, sc_tokens, model)
+    for key, sc_tokens, en_token, label, suffix in RUNTIMES:
+        scs = short_chat_runs(device, sc_tokens, model + suffix)
         if scs:
             ds = [load(p) for p in scs]
             ms = [d["metrics"] for d in ds]
@@ -149,6 +154,8 @@ def collect(device, model):
             rows["throughput"].append({
                 "label": label, "key": key, "n": len(scs),
                 "quant": ds[0]["model"].get("quantization", "?"),
+                "size": ds[0]["model"].get("onDiskSizeMB"),   # raw byte budget, shown so two
+                                                              # "4-bit" rows of different size aren't conflated
                 "decode": med([m["decodeTokensPerSecond"] for m in ms]),
                 "ttft": med([m["firstTokenLatencyMS"] for m in ms]),
                 "prefill": med([m["promptTokensPerSecond"] for m in ms]),
@@ -161,7 +168,7 @@ def collect(device, model):
                         and (med([m["generatedTokenCount"] for m in ms]) <= 130),
             })
             rows["raw"] += [p.name for p in scs]
-        ef = energy_file(device, en_token, model)
+        ef = energy_file(device, en_token, model + suffix)
         if ef:
             d = load(ef); m = d["metrics"]
             ts = throttle_stats(m)
@@ -201,8 +208,8 @@ def md_bandwidth(rows, model, device_id):
     if not gb:
         return None
     peak = DEVICE_PEAK_BW.get(device_id)
-    head = "| Runtime | Quant | Decode tok/s | Effective BW (GB/s) |"
-    sep = "|---|---|---:|---:|"
+    head = "| Runtime | Quant | Weight MB on disk | Decode tok/s | Effective BW (GB/s) |"
+    sep = "|---|---|---:|---:|---:|"
     if peak:
         head += " % of peak BW |"; sep += "---:|"
     out = [head, sep]
@@ -213,7 +220,8 @@ def md_bandwidth(rows, model, device_id):
         r["_eff"] = eff
     for r in rows["throughput"]:
         win = " 🏆" if abs(r["_eff"] - best_eff) < 1e-6 else ""
-        line = f"| {r['label']} | {r['quant']} | {r['decode']:.1f} | {r['_eff']:.1f}{win} |"
+        sz = f"{r['size']:.0f}" if r.get("size") else "—"
+        line = f"| {r['label']} | {r['quant']} | {sz} | {r['decode']:.1f} | {r['_eff']:.1f}{win} |"
         if peak:
             line += f" {r['_eff'] / peak * 100:.0f}% |"
         out.append(line)
@@ -257,6 +265,18 @@ SUSTAINED_FAILURES = {
 # Why a runtime is excluded from a fair throughput table, keyed (runtime key, model). Used
 # only when that runtime has data but isn't fair-consistent; otherwise a generic note is shown.
 CAPTURE_NOTES = {
+    ("core-ai-gpu", "qwen3-0.6b"):
+        "**Core AI / GPU** (`coreai-pipelined`): a pre-fair Debug / iOS 27 preview exists — "
+        "**71 tok/s cold → ~180 warm**, 524 MB peak, INT4 (dynamic), the fastest of any runtime here "
+        "once its 3-deep pipeline is warm. Withheld from the same-conditions table because it is Debug "
+        "and not captured as 3 fresh-cold launches (run 1 cold, runs 2–4 warm) — a fair Release / "
+        "iso-cold re-capture against this LiteRT-LM row is pending. Full method + the cold-vs-warm "
+        "breakdown: [`methodology/coreai-ios.md`](../../methodology/coreai-ios.md).",
+    ("core-ai-ane", "qwen3-0.6b"):
+        "**Core AI / ANE** (`static-shape`): pre-fair Debug / iOS 27 preview — **~50 tok/s**, 1166 MB "
+        "peak, mixed 4/8-bit palettized. Steady cold-to-warm, the Neural-Engine corner (vs CoreML-LLM's "
+        "leaner-but-slower ANE path). Withheld pending the same fair Release re-capture as the GPU "
+        "export; see [`methodology/coreai-ios.md`](../../methodology/coreai-ios.md).",
     ("coreml-llm", "gemma-4-e2b"):
         "**CoreML / ANE**: a fair re-capture was attempted via a side-loaded bundle. One cold run "
         "measured **25.3 tok/s**, but n=3 iso-runs were jetsam-killed (`signal 9`) — the gemma-3n "
@@ -360,11 +380,19 @@ comparison; we disclose them rather than hide them. Decode tok/s on a fixed devi
 **Held equal:** model, prompt, 128-token budget *and* generated count, greedy, cold start, n=3 median,
 Release build, `phys_footprint`, one device per table. **Disclosed, not equalised:**
 
-- **Quantisation** is each runtime's native format (LiteRT mixed-INT4 / MLX Q4 / CoreML **INT8**) —
-  shown per row (fairness rule 3). The effective-bandwidth column scales bytes/token by each row's
-  quant, so the INT8 row isn't unfairly credited.
-- **Compute unit** — LiteRT / MLX run on the **GPU**, CoreML on the **ANE**. An intentional axis, but a
-  real difference; read the ANE row as the memory/power-efficiency corner, not a GPU peer.
+- **Quantisation** is each runtime's native format (LiteRT mixed-INT4 / MLX Q4 / CoreML **INT8** /
+  Core AI INT4-dynamic | mixed-4/8) — shown per row (fairness rule 3), with the **on-disk weight size**
+  next to it. The effective-bandwidth column scales bytes/token coarsely by quant class (so the INT8 row
+  isn't credited as 4-bit), but a single per-model byte constant does **not** equalise two nominally
+  4-bit artifacts of different size (Core AI ~327 MB vs LiteRT ~498 MB) — read BW with the size column.
+- **Compute unit** — LiteRT / MLX / Core AI-GPU run on the **GPU**, CoreML / Core AI-ANE on the **ANE**.
+  An intentional axis, but a real difference; read an ANE row as the memory/power-efficiency corner, not a GPU peer.
+- **Core AI couples compute unit *and* quant** — its compute unit is fixed by the **export shape**, and
+  the two shapes carry different quant: the dynamic export → **GPU / INT4** (~327 MB), the static iOS
+  export → **ANE / mixed 4/8-bit palettized** (~434 MB). You cannot request "ANE + pure INT4". So a Core AI
+  GPU-vs-ANE row is a **shipped-config** comparison (engine *and* quant together, as Apple exports it),
+  **not** a clean engine A/B — stated outright rather than smoothed over. A matched-INT4 export to
+  decouple the two is tracked in [`COREAI_INT4_EXPORT.md`](COREAI_INT4_EXPORT.md).
 - **Memory model** — LiteRT-LM keeps an INT8 embedding table + Metal buffers, so its footprint is
   structurally higher than a dynamic-KV 4-bit runtime like MLX. Real, disclosed — not a thumb on the scale.
 
@@ -379,6 +407,7 @@ growth (MLX) and litert's long-context blockers are in [`LONG_CONTEXT.md`](LONG_
 **Companion docs:** [quality parity (correctness + degeneracy)](QUALITY.md) ·
 [sustained-generation hang bug report](LITERT_SUSTAINED_HANG.md) ·
 [model coverage matrix](MODEL_MATRIX.md) · [LiteRT model availability](MODEL_AVAILABILITY.md) ·
+[Core AI matched-INT4 export (open)](COREAI_INT4_EXPORT.md) ·
 [reproduce / methods](METHODS.md) · [one-shot runbook (iPhone + Mac)](RUNBOOK.md).
 """
 
@@ -461,6 +490,11 @@ def main():
                              f"scaled per row by quant — the **INT8** row reads ~2×). Against {pk}, this "
                              f"ranks how well each runtime works the memory system. Absolute GB/s carries "
                              f"the byte estimate; the same-device ordering is robust._\n")
+                parts.append("> ⚠️ _The byte/token figure is a single per-model constant — it does **not** "
+                             "capture that two nominally **4-bit** artifacts can carry different real budgets "
+                             "(see the Weight MB column: e.g. Core AI INT4 ~327 MB vs LiteRT mixed-INT4 ~498 MB). "
+                             "Quant is disclosed, not equalised — read the effective-BW estimate alongside the "
+                             "on-disk size, not as a like-for-like normalisation._\n")
 
             if rows["throttle"]:
                 parts.append("### Sustained throttling — 600 s continuous, unplugged\n")

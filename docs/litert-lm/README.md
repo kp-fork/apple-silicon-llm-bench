@@ -40,11 +40,19 @@ comparison; we disclose them rather than hide them. Decode tok/s on a fixed devi
 **Held equal:** model, prompt, 128-token budget *and* generated count, greedy, cold start, n=3 median,
 Release build, `phys_footprint`, one device per table. **Disclosed, not equalised:**
 
-- **Quantisation** is each runtime's native format (LiteRT mixed-INT4 / MLX Q4 / CoreML **INT8**) —
-  shown per row (fairness rule 3). The effective-bandwidth column scales bytes/token by each row's
-  quant, so the INT8 row isn't unfairly credited.
-- **Compute unit** — LiteRT / MLX run on the **GPU**, CoreML on the **ANE**. An intentional axis, but a
-  real difference; read the ANE row as the memory/power-efficiency corner, not a GPU peer.
+- **Quantisation** is each runtime's native format (LiteRT mixed-INT4 / MLX Q4 / CoreML **INT8** /
+  Core AI INT4-dynamic | mixed-4/8) — shown per row (fairness rule 3), with the **on-disk weight size**
+  next to it. The effective-bandwidth column scales bytes/token coarsely by quant class (so the INT8 row
+  isn't credited as 4-bit), but a single per-model byte constant does **not** equalise two nominally
+  4-bit artifacts of different size (Core AI ~327 MB vs LiteRT ~498 MB) — read BW with the size column.
+- **Compute unit** — LiteRT / MLX / Core AI-GPU run on the **GPU**, CoreML / Core AI-ANE on the **ANE**.
+  An intentional axis, but a real difference; read an ANE row as the memory/power-efficiency corner, not a GPU peer.
+- **Core AI couples compute unit *and* quant** — its compute unit is fixed by the **export shape**, and
+  the two shapes carry different quant: the dynamic export → **GPU / INT4** (~327 MB), the static iOS
+  export → **ANE / mixed 4/8-bit palettized** (~434 MB). You cannot request "ANE + pure INT4". So a Core AI
+  GPU-vs-ANE row is a **shipped-config** comparison (engine *and* quant together, as Apple exports it),
+  **not** a clean engine A/B — stated outright rather than smoothed over. A matched-INT4 export to
+  decouple the two is tracked in [`COREAI_INT4_EXPORT.md`](COREAI_INT4_EXPORT.md).
 - **Memory model** — LiteRT-LM keeps an INT8 embedding table + Metal buffers, so its footprint is
   structurally higher than a dynamic-KV 4-bit runtime like MLX. Real, disclosed — not a thumb on the scale.
 
@@ -59,6 +67,7 @@ growth (MLX) and litert's long-context blockers are in [`LONG_CONTEXT.md`](LONG_
 **Companion docs:** [quality parity (correctness + degeneracy)](QUALITY.md) ·
 [sustained-generation hang bug report](LITERT_SUSTAINED_HANG.md) ·
 [model coverage matrix](MODEL_MATRIX.md) · [LiteRT model availability](MODEL_AVAILABILITY.md) ·
+[Core AI matched-INT4 export (open)](COREAI_INT4_EXPORT.md) ·
 [reproduce / methods](METHODS.md) · [one-shot runbook (iPhone + Mac)](RUNBOOK.md).
 
 
@@ -80,15 +89,21 @@ Conditions: **fair** (0.13.1 · Release · 128-token cap · phys_footprint). Lit
 | MLX-Swift / GPU | Q4 | 3 | 130.5 🏆 | 48 | 453 | 487 | 10.3 |
 | CoreML / ANE | INT8 palettized | 3 | 37.7 | 572 | 33 | 987 | 30.1 |
 
+> ⚠️ **Core AI / GPU** (`coreai-pipelined`): a pre-fair Debug / iOS 27 preview exists — **71 tok/s cold → ~180 warm**, 524 MB peak, INT4 (dynamic), the fastest of any runtime here once its 3-deep pipeline is warm. Withheld from the same-conditions table because it is Debug and not captured as 3 fresh-cold launches (run 1 cold, runs 2–4 warm) — a fair Release / iso-cold re-capture against this LiteRT-LM row is pending. Full method + the cold-vs-warm breakdown: [`methodology/coreai-ios.md`](../../methodology/coreai-ios.md).
+>
+> **Core AI / ANE** (`static-shape`): pre-fair Debug / iOS 27 preview — **~50 tok/s**, 1166 MB peak, mixed 4/8-bit palettized. Steady cold-to-warm, the Neural-Engine corner (vs CoreML-LLM's leaner-but-slower ANE path). Withheld pending the same fair Release re-capture as the GPU export; see [`methodology/coreai-ios.md`](../../methodology/coreai-ios.md).
+
 ### Why it's fast — decode is memory-bandwidth-bound
 
-| Runtime | Quant | Decode tok/s | Effective BW (GB/s) | % of peak BW |
-|---|---|---:|---:|---:|
-| LiteRT-LM / GPU | INT4 (mixed, blockwise gs32) | 118.6 | 41.5 | 54% |
-| MLX-Swift / GPU | Q4 | 130.5 | 45.7 🏆 | 59% |
-| CoreML / ANE | INT8 palettized | 37.7 | 26.4 | 34% |
+| Runtime | Quant | Weight MB on disk | Decode tok/s | Effective BW (GB/s) | % of peak BW |
+|---|---|---:|---:|---:|---:|
+| LiteRT-LM / GPU | INT4 (mixed, blockwise gs32) | 498 | 118.6 | 41.5 | 54% |
+| MLX-Swift / GPU | Q4 | 350 | 130.5 | 45.7 🏆 | 59% |
+| CoreML / ANE | INT8 palettized | 900 | 37.7 | 26.4 | 34% |
 
 > _Decode reads ≈ all active weights once per token, so **tok/s × weight-bytes = effective read bandwidth** (~0.35 GB/token at 4-bit, scaled per row by quant — the **INT8** row reads ~2×). Against ~77 GB/s (LPDDR5X, public-teardown **estimate**), this ranks how well each runtime works the memory system. Absolute GB/s carries the byte estimate; the same-device ordering is robust._
+
+> ⚠️ _The byte/token figure is a single per-model constant — it does **not** capture that two nominally **4-bit** artifacts can carry different real budgets (see the Weight MB column: e.g. Core AI INT4 ~327 MB vs LiteRT mixed-INT4 ~498 MB). Quant is disclosed, not equalised — read the effective-BW estimate alongside the on-disk size, not as a like-for-like normalisation._
 
 ### Sustained throttling — 600 s continuous, unplugged
 
@@ -129,13 +144,15 @@ Conditions: **fair** (0.13.1 · Release · 128-token cap · phys_footprint). Lit
 
 ### Why it's fast — decode is memory-bandwidth-bound
 
-| Runtime | Quant | Decode tok/s | Effective BW (GB/s) | % of peak BW |
-|---|---|---:|---:|---:|
-| LiteRT-LM / GPU | INT4 (QAT) | 58.4 | 46.1 🏆 | 60% |
-| MLX-Swift / GPU | Q4 | 46.2 | 36.5 | 48% |
-| llama.cpp / GPU | Q4_K_M | 35.5 | 28.1 | 37% |
+| Runtime | Quant | Weight MB on disk | Decode tok/s | Effective BW (GB/s) | % of peak BW |
+|---|---|---:|---:|---:|---:|
+| LiteRT-LM / GPU | INT4 (QAT) | 2650 | 58.4 | 46.1 🏆 | 60% |
+| MLX-Swift / GPU | Q4 | 1330 | 46.2 | 36.5 | 48% |
+| llama.cpp / GPU | Q4_K_M | 1700 | 35.5 | 28.1 | 37% |
 
 > _Decode reads ≈ all active weights once per token, so **tok/s × weight-bytes = effective read bandwidth** (~0.79 GB/token at 4-bit, scaled per row by quant — the **INT8** row reads ~2×). Against ~77 GB/s (LPDDR5X, public-teardown **estimate**), this ranks how well each runtime works the memory system. Absolute GB/s carries the byte estimate; the same-device ordering is robust._
+
+> ⚠️ _The byte/token figure is a single per-model constant — it does **not** capture that two nominally **4-bit** artifacts can carry different real budgets (see the Weight MB column: e.g. Core AI INT4 ~327 MB vs LiteRT mixed-INT4 ~498 MB). Quant is disclosed, not equalised — read the effective-BW estimate alongside the on-disk size, not as a like-for-like normalisation._
 
 ### Sustained throttling + energy
 
@@ -146,6 +163,15 @@ Conditions: **fair** (0.13.1 · Release · 128-token cap · phys_footprint). Lit
 
 ## Provenance — every cell traces to a raw file
 
+- [`iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run1.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run1.jsonl)
+- [`iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run2.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run2.jsonl)
+- [`iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run3.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run3.jsonl)
+- [`iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run4.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run4.jsonl)
+- [`iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run5.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run5.jsonl)
+- [`iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run1.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run1.jsonl)
+- [`iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run2.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run2.jsonl)
+- [`iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run3.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run3.jsonl)
+- [`iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run4.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run4.jsonl)
 - [`iphone17pro-coreml-llm-gemma-4-e2b-energy-tg128.jsonl`](../../results/raw/iphone17pro-coreml-llm-gemma-4-e2b-energy-tg128.jsonl)
 - [`iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run1.jsonl)
 - [`iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run2.jsonl)

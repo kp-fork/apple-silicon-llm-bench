@@ -23,7 +23,10 @@ DEVICE_LABEL="iphone17pro"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 PROJ="$REPO/ios/BenchmarkApp/BenchmarkApp.xcodeproj"
 DD="$HOME/Library/Developer/Xcode/DerivedData/BenchmarkApp-coreai"
-APP="$DD/Build/Products/Debug-iphoneos/BenchmarkApp.app"
+# Release by default so the capture is directly comparable to the fair LiteRT-LM
+# rows (Release, 128-token cap, iso-cold). Set COREAI_CONFIG=Debug for a quick probe.
+CONFIG="${COREAI_CONFIG:-Release}"
+APP="$DD/Build/Products/$CONFIG-iphoneos/BenchmarkApp.app"
 
 EXPORTS="$HOME/code/coreai/coreai-models/exports"
 MLX_REPO="mlx-community/Qwen3-0.6B-4bit"
@@ -37,8 +40,8 @@ copy_to() { xcrun devicectl device copy to --device "$UDID" \
 
 # ---- 1. build + install -----------------------------------------------------
 build_install() {
-  log "build + install BenchmarkApp -> $UDID"
-  xcodebuild -project "$PROJ" -scheme BenchmarkApp -configuration Debug \
+  log "build + install BenchmarkApp ($CONFIG) -> $UDID"
+  xcodebuild -project "$PROJ" -scheme BenchmarkApp -configuration "$CONFIG" \
     -destination "platform=iOS,id=$UDID" -derivedDataPath "$DD" \
     -allowProvisioningUpdates CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="$TEAM" build
   xcrun devicectl device install app --device "$UDID" "$APP"
@@ -86,7 +89,10 @@ sideload() {
 
 # ---- 4. run matrix ----------------------------------------------------------
 # DETACHED launch (no --console — it fails to attach from a non-interactive
-# shell, CoreDeviceError 10002). --runs 3 = 1 cold + 2 warm in one app session.
+# shell, CoreDeviceError 10002). Each engine is run as 3 SEPARATE cold launches
+# (fresh process each → model reloaded → coldRun=true), matching the LiteRT fair
+# protocol in run_device_bench.sh — NOT `--runs 3` in one session, which would be
+# 1 cold + 2 warm and not comparable to the capped Release LiteRT-LM rows.
 run_matrix() {
   local engines=(
     "core-ai core-ai/qwen3-0.6b-ane"
@@ -96,10 +102,12 @@ run_matrix() {
   )
   for e in "${engines[@]}"; do
     set -- $e
-    log "run $1 $2 (--runs 3)"
-    xcrun devicectl device process launch --terminate-existing --device "$UDID" "$BUNDLE_ID" -- \
-      --yardstick-autorun --runtime "$1" --model-id "$2" --task short-chat --runs 3 >/dev/null
-    sleep 110
+    for run in 1 2 3; do
+      log "run $1 $2 (cold launch $run/3)"
+      xcrun devicectl device process launch --terminate-existing --device "$UDID" "$BUNDLE_ID" -- \
+        --yardstick-autorun --runtime "$1" --model-id "$2" --task short-chat --runs 1 >/dev/null
+      sleep 110
+    done
   done
 }
 
