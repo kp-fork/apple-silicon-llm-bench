@@ -92,10 +92,10 @@ Conditions: **fair** (0.13.1 · Release · 128-token cap · phys_footprint). Lit
 | LiteRT-LM / GPU | INT4 (mixed, blockwise gs32) | 3 | 118.6 | 239 | — | 1071 | 10.1 |
 | MLX-Swift / GPU | Q4 | 3 | 130.5 | 48 | 453 | 487 | 10.3 |
 | CoreML / ANE | INT8 palettized | 3 | 37.7 | 572 | 33 | 987 | 30.1 |
-| Core AI / GPU | INT4 (dynamic) | 3 | 76.5† | 16 | 1700 | 196 | 5.9 |
+| Core AI / GPU | INT4 (dynamic) | 3 | 76.5→194† 🏆warm | 16 | 1700 | 196 | 5.9 |
 | Core AI / ANE | 4-bit palettized (uniform g32) | 3 | 143.7 🏆 | 41 | 511 | 1158 | 9.5 |
 
-> **† Core AI / GPU** is shown at its **true cold** (77 tok/s, n=1): its Metal pipeline kernel cache persists across launches, so only the first launch after a fresh install is genuinely cold — later iso-cold launches reuse the cached kernels. Its **warm steady-state is ~194 tok/s** (cache primed — what a user actually sees, and the fastest here). Cold is shown for iso-cold parity with the cold-consistent runtimes; warm is the real-world number. Both are disclosed rather than blended into a warm-biased median.
+> **† Core AI / GPU** is shown **cold → warm** (77 → 194 tok/s): its Metal pipeline kernel cache persists across launches, so only the first launch after a fresh install is genuinely cold (n=1, 77); once primed it holds ~194 — the steady-state a user actually sees, and the fastest here. The **cold** figure is ranked against the cold-consistent runtimes (where cold = warm); the **warm** figure carries its own 🏆warm. Shown side-by-side rather than blended into a warm-biased median or hidden behind a cold-only number.
 
 ### Why it's fast — decode is memory-bandwidth-bound
 

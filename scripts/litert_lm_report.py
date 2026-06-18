@@ -216,11 +216,18 @@ def md_throughput(rows):
     out = ["| Runtime | Quant | n | Decode tok/s | TTFT ms | Prefill tok/s | Peak RAM MB | ITL p99 ms |",
            "|---|---|---:|---:|---:|---:|---:|---:|"]
     best = max(r["decode"] for r in rows["throughput"])
+    warm_best = max((r["warm"] for r in rows["throughput"] if r.get("warm")), default=0)
     for r in rows["throughput"]:
-        win = " 🏆" if abs(r["decode"] - best) < 1e-6 else ""
-        cold_mark = "†" if r.get("warm") else ""   # value shown is true-cold (n=1); warm in the note
+        # Kernel-cached runtimes show cold → warm side-by-side (both honest); the cold value is
+        # ranked against the cold-consistent runtimes, the warm value gets its own 🏆.
+        if r.get("warm"):
+            wwin = " 🏆warm" if abs(r["warm"] - warm_best) < 1e-6 else ""
+            dcell = f"{r['decode']:.1f}→{r['warm']:.0f}†{wwin}"
+        else:
+            cwin = " 🏆" if abs(r["decode"] - best) < 1e-6 else ""
+            dcell = f"{r['decode']:.1f}{cwin}"
         prefill = f"{r['prefill']:.0f}" if r["prefill"] else "—"
-        out.append(f"| {r['label']} | {r['quant']} | {r['n']} | {r['decode']:.1f}{cold_mark}{win} | {r['ttft']:.0f} | "
+        out.append(f"| {r['label']} | {r['quant']} | {r['n']} | {dcell} | {r['ttft']:.0f} | "
                    f"{prefill} | {r['peakmem']:.0f} | {r['p99']:.1f} |")
     return "\n".join(out)
 
@@ -231,12 +238,12 @@ def md_kernelcache_note(rows):
     for r in rows["throughput"]:
         if r.get("warm"):
             notes.append(
-                f"**† {r['label']}** is shown at its **true cold** ({r['decode']:.0f} tok/s, n=1): its Metal "
-                f"pipeline kernel cache persists across launches, so only the first launch after a fresh install "
-                f"is genuinely cold — later iso-cold launches reuse the cached kernels. Its **warm steady-state is "
-                f"~{r['warm']:.0f} tok/s** (cache primed — what a user actually sees, and the fastest here). Cold "
-                f"is shown for iso-cold parity with the cold-consistent runtimes; warm is the real-world number. "
-                f"Both are disclosed rather than blended into a warm-biased median.")
+                f"**† {r['label']}** is shown **cold → warm** ({r['decode']:.0f} → {r['warm']:.0f} tok/s): its "
+                f"Metal pipeline kernel cache persists across launches, so only the first launch after a fresh "
+                f"install is genuinely cold (n=1, {r['decode']:.0f}); once primed it holds ~{r['warm']:.0f} — the "
+                f"steady-state a user actually sees, and the fastest here. The **cold** figure is ranked against "
+                f"the cold-consistent runtimes (where cold = warm); the **warm** figure carries its own 🏆warm. "
+                f"Shown side-by-side rather than blended into a warm-biased median or hidden behind a cold-only number.")
     return ("> " + "\n>\n> ".join(notes)) if notes else None
 
 
