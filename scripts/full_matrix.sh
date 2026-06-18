@@ -85,9 +85,15 @@ litert_local_src() {
 # coreml gemma is side-loaded from the local prebuilt bundle (no HF), see prefetch().
 COREML_LOCAL="$HOME/Documents/Models/gemma4-e2b"
 
-# iPhone runs the small/mid set (0.6/4B everywhere; 8B + E4B attempted, may jetsam = recorded)
-# + Lu's models (LFM2.5 / MiniCPM, small).
-IPHONE_JOBS=( "${QWEN_LITERT[@]}" "${QWEN_MLX[@]}" "${QWEN_LLAMA[@]}" "${GEMMA[@]}" "${LU_MODELS[@]}" )
+# iPhone runs the small/mid set (0.6/4B everywhere; 8B + E4B attempted, may jetsam = recorded).
+# Qwen3 + Gemma4 are the currently-runnable families. LFM2.5/MiniCPM are DEFERRED by default:
+# our local .litertlm conversions still fail (MiniCPM garbage 0/8, LFM invoke-fail) — set
+# INCLUDE_LU=1 to attempt them once a working conversion lands. Core AI (Qwen3 only — it doesn't
+# support gemma4 yet) is captured separately by scripts/bench_coreai_iphone.sh (GPU linear-INT4 +
+# ANE uniform-4bit-palettized).
+INCLUDE_LU="${INCLUDE_LU:-0}"
+IPHONE_JOBS=( "${QWEN_LITERT[@]}" "${QWEN_MLX[@]}" "${QWEN_LLAMA[@]}" "${GEMMA[@]}" )
+[ "$INCLUDE_LU" = "1" ] && IPHONE_JOBS+=( "${LU_MODELS[@]}" )
 # Mac runs everything + the big models; mac() filters to litert+mlx (CLI ships only those).
 MAC_JOBS=( "${IPHONE_JOBS[@]}" "${MAC_BIG[@]}" )
 
