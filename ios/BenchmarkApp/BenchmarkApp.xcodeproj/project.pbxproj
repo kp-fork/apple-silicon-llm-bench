@@ -41,6 +41,7 @@
 		4D5CECB4C50714A3B928F66C /* AnemllRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BF89FC5DAB913F5DC74C99 /* AnemllRuntime.swift */; };
 		52F23D827122805FEDBBDA29 /* DeviceSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6978D6BB9139052EA83F5605 /* DeviceSnapshot.swift */; };
 		531015CDC40AD8F9995AE7F7 /* AnemllRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BF89FC5DAB913F5DC74C99 /* AnemllRuntime.swift */; };
+		54A24EF1C659F98597A290C6 /* QualityTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6CCE863246D4DF67FA309E1 /* QualityTask.swift */; };
 		584FCFB61598A0F55B3649E2 /* ExecuTorchRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1FDA1BD8CFFB6E92798B22 /* ExecuTorchRuntime.swift */; };
 		59BA60639CE894516CE31D7A /* Transformers in Frameworks */ = {isa = PBXBuildFile; productRef = 41522D438C797371055C13FC /* Transformers */; };
 		59ED87AF2C745D8E012A1539 /* CameraVLMRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 194A6AE44E94937B50DA5B63 /* CameraVLMRunner.swift */; };
@@ -76,6 +77,7 @@
 		A09211745827F71359B56AF8 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B1EE778237E01ED0945D4AE /* HistoryView.swift */; };
 		A90EA00E6A6DB24DE1E8ABBE /* EnergyMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8646DFD32712FBAAEB72156D /* EnergyMonitor.swift */; };
 		B3236EC37B1CE4074B972226 /* kernels_quantized in Frameworks */ = {isa = PBXBuildFile; productRef = 5E734E7640926D7B17DD6CC4 /* kernels_quantized */; };
+		B482BE617FA81E5C364D906D /* QualityTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6CCE863246D4DF67FA309E1 /* QualityTask.swift */; };
 		B9ABA81B66E23D58C7F7EB6D /* CameraFrameProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347EDDC56E7FE6ECBD50E6F1 /* CameraFrameProvider.swift */; };
 		BCA6E27341892C066E7C17AB /* CoreAILM in Frameworks */ = {isa = PBXBuildFile; productRef = 3CE5F5ADF5065EE7E42DB9E8 /* CoreAILM */; };
 		BE6487CEF4C49373288701CC /* Yardstick.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C8A95BC024A5299976FB3A /* Yardstick.swift */; };
@@ -165,6 +167,7 @@
 		EE59486A9C2FDFB6D3AB40E9 /* CameraVLMTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraVLMTask.swift; sourceTree = "<group>"; };
 		F5235B8E78B06C2870291FF5 /* HFDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HFDownloader.swift; sourceTree = "<group>"; };
 		F5A53FFB38F5191EA948C20E /* LiteRT-LM */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "LiteRT-LM"; path = "Vendored/LiteRT-LM"; sourceTree = SOURCE_ROOT; };
+		F6CCE863246D4DF67FA309E1 /* QualityTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QualityTask.swift; sourceTree = "<group>"; };
 		FC7B6B97C8F1331B7F122CF4 /* ResultStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultStore.swift; sourceTree = "<group>"; };
 		FCADC364D9871831E17D1318 /* LongContextTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LongContextTask.swift; sourceTree = "<group>"; };
 		FF66B5ACD9BD34F3F9940141 /* BenchmarkApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BenchmarkApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -353,6 +356,7 @@
 			children = (
 				1124C321F63E5E0AEEF8902E /* AppLifecycleTask.swift */,
 				FCADC364D9871831E17D1318 /* LongContextTask.swift */,
+				F6CCE863246D4DF67FA309E1 /* QualityTask.swift */,
 				3B472A5B7142B5A088948C3E /* ShortChatTask.swift */,
 				DDC21ED32AE3215BD9BAB3DC /* SustainedGenerationTask.swift */,
 			);
@@ -538,6 +542,7 @@
 				4BAC573F8F4D1928A686469F /* MediaPipeRuntime.swift in Sources */,
 				67AE241DA38F53CE78E20C86 /* MemoryMonitor.swift in Sources */,
 				60D67ADC917C3CD389CDF184 /* ModelCatalog.swift in Sources */,
+				54A24EF1C659F98597A290C6 /* QualityTask.swift in Sources */,
 				9FB0903D22C954FDEB555847 /* ResultStore.swift in Sources */,
 				38D2EEF177543768A564B297 /* RuntimeKind.swift in Sources */,
 				872536C8C78AE6942338D99A /* ShortChatTask.swift in Sources */,
@@ -582,6 +587,7 @@
 				4766D15ABA21C6FF5EBBCDB8 /* MediaPipeRuntime.swift in Sources */,
 				7EDA3E9184B29B3565D7AA0A /* MemoryMonitor.swift in Sources */,
 				FA911A2CDFA67C2099693800 /* ModelCatalog.swift in Sources */,
+				B482BE617FA81E5C364D906D /* QualityTask.swift in Sources */,
 				89711B8F253C16743029F7CC /* ResultDetailView.swift in Sources */,
 				735A14E6E09D3E68F1C50E4F /* ResultStore.swift in Sources */,
 				80170DFF4FA2267ACB91DC3D /* RootView.swift in Sources */,

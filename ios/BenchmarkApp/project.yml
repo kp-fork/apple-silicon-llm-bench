@@ -182,3 +182,22 @@ targets:
         embed: false
         codeSign: false
         optional: true
+
+# Shared scheme so `xcodebuild -scheme BenchmarkApp` works headlessly (the device
+# bench scripts and Core AI capture drive it via -scheme). Without this block
+# xcodegen emits no scheme and every `-scheme BenchmarkApp` invocation fails.
+schemes:
+  BenchmarkApp:
+    build:
+      targets:
+        BenchmarkApp: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
