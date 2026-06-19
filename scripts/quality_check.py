@@ -52,12 +52,29 @@ def degenerate(text):
     return False
 
 
+def empty_collapse(text, gen_tokens, streamed_chunks):
+    """A run that reported decode tokens but streamed (almost) no text — the
+    model emitted only special / non-decodable tokens. The substring checks
+    can't see this (there is nothing to match), so it would otherwise score
+    0/8 + "not degenerate", masking a collapse as a mere wrong-answer run.
+    `streamed_chunks` is None on pre-2026-06 JSONL (field absent) — fall back
+    to the output length in that case."""
+    if streamed_chunks == 0 and gen_tokens and gen_tokens > 0:
+        return True
+    if gen_tokens and gen_tokens >= 8 and len(text.strip()) < 5:
+        return True
+    return False
+
+
 def main():
     rows = []
     for f in sorted(RAW.glob("*-quality-run*.jsonl")):
         d = json.loads(open(f).read().split("\n")[0])
         dev = f.name.split("-quality-")[0]
         out = d.get("outputSample", "")
+        m = d.get("metrics", {})
+        gen = m.get("generatedTokenCount", 0)
+        streamed = m.get("streamedChunkCount")  # None on pre-2026-06 rows
         hits = correctness(out)
         rows.append({
             "dev": dev,
@@ -65,8 +82,8 @@ def main():
             "model": d.get("model", {}).get("displayName", d.get("model", {}).get("id", "?")),
             "quant": d.get("model", {}).get("quantization", "?"),
             "score": sum(hits), "hits": hits,
-            "degen": degenerate(out),
-            "sample": " ".join(out.split())[:300],
+            "degen": degenerate(out) or empty_collapse(out, gen, streamed),
+            "sample": " ".join(out.split())[:300] or f"(no text — {gen} tokens, 0 decoded)",
         })
 
     lines = [

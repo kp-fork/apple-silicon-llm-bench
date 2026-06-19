@@ -4,6 +4,8 @@
 
 | Device | Runtime | Model | Quant | Correct | Degenerate? |
 |---|---|---|---|---:|:--:|
+| iphone17pro-core-ai-qwen3-4b-gpu | core-ai | Qwen3-4B (Core AI, GPU) | INT4 (dynamic) | 6/8 | no |
+| iphone17pro-mlx-qwen3-4b | mlx-swift | Qwen3-4B (4-bit) | Q4 | 7/8 | no |
 | m4max-litert-lm-gemma-4-e2b | litert-lm | Gemma 4 E2B (.litertlm) | INT4 (QAT) | 8/8 | no |
 | m4max-litert-lm-minicpm5-1b | litert-lm | MiniCPM5-1B (.litertlm, local) | INT4 (ekv1024) | 0/8 | ⚠️ yes |
 | m4max-litert-lm-qwen3-0.6b | litert-lm | Qwen3 0.6B (.litertlm) | INT4 (mixed, blockwise gs32) | 7/8 | no |
@@ -18,6 +20,8 @@
 
 `17+25=42  capital=Tokyo  opp(hot)=cold  days/week=7  thanks(fr)=merci  8*7=56  0.9>0.11  rhyme=blue`
 
+- **core-ai Qwen3-4B (Core AI, GPU)** (iphone17pro-core-ai-qwen3-4b-gpu): `✓✓✓✓✓✓··`  — “<think> Okay, let's tackle each of these questions one by one. 1. **17 + 25**: That's straightforward addition. 17 plus 25. Let me add them. 17 + 20 is 37, then plus 5 more is 42. So the answer should be 42. 2. **Capital of Japan**: I remember that Japan's capital is Tokyo. But wait, sometimes peopl”
+- **mlx-swift Qwen3-4B (4-bit)** (iphone17pro-mlx-qwen3-4b): `✓✓✓✓✓✓✓·`  — “<think> Okay, let's tackle these questions one by one. First, the user wants each answer on its own line, brief, no explanations. So I need to make sure each answer is straightforward. 1. What is 17 + 25? That's a simple addition. 17 plus 25. Let me calculate: 17 + 20 is 37, plus 5 is 42. So 42. 2. ”
 - **litert-lm Gemma 4 E2B (.litertlm)** (m4max-litert-lm-gemma-4-e2b): `✓✓✓✓✓✓✓✓`  — “42 Tokyo Cold Seven Merci 56 0.9 0.11 blue”
 - **litert-lm MiniCPM5-1B (.litertlm, local)** (m4max-litert-lm-minicpm5-1b): `········`  — “<|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_prefix|><|fim_”
 - **litert-lm Qwen3 0.6B (.litertlm)** (m4max-litert-lm-qwen3-0.6b): `✓✓✓✓✓✓✓·`  — “<think> Okay, let's tackle each question one by one. 1. What is 17 + 25? Well, 17 plus 25... let me add them. 17 + 25 is 42. That's straightforward. 2. The capital of Japan is Tokyo. Yeah, I remember that from my studies. 3. The opposite of "hot" is "cold". That makes sense because heat and cold are”

@@ -61,6 +61,14 @@ public struct Metrics: Codable, Sendable {
     public let decodeTokensPerSecond: Double
     public let promptTokenCount: Int
     public let generatedTokenCount: Int
+    /// Number of `.chunk` (decoded-text) events actually streamed during the
+    /// run. Distinct from `generatedTokenCount` (which prefers the runtime's
+    /// `.info` decode-token count): when a run reports tokens but streams *no*
+    /// text (`streamedChunkCount == 0` while `generatedTokenCount > 0`) the
+    /// model produced only non-decodable / special tokens — i.e. a degenerate
+    /// collapse, not a capture bug. Persisting it makes an empty `outputSample`
+    /// self-diagnosing. Optional so pre-2026-06 JSONL still decodes.
+    public let streamedChunkCount: Int?
     public let totalGenerationTimeSeconds: Double
     public let cancellationLatencyMS: Int?
     public let stopReason: String
@@ -115,6 +123,7 @@ public struct Metrics: Codable, Sendable {
         decodeTokensPerSecond: Double,
         promptTokenCount: Int,
         generatedTokenCount: Int,
+        streamedChunkCount: Int? = nil,
         totalGenerationTimeSeconds: Double,
         cancellationLatencyMS: Int?,
         stopReason: String,
@@ -144,6 +153,7 @@ public struct Metrics: Codable, Sendable {
         self.decodeTokensPerSecond = decodeTokensPerSecond
         self.promptTokenCount = promptTokenCount
         self.generatedTokenCount = generatedTokenCount
+        self.streamedChunkCount = streamedChunkCount
         self.totalGenerationTimeSeconds = totalGenerationTimeSeconds
         self.cancellationLatencyMS = cancellationLatencyMS
         self.stopReason = stopReason

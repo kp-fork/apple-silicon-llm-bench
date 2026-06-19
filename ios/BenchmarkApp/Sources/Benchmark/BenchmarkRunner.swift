@@ -165,7 +165,8 @@ public actor BenchmarkRunner {
                         tokenCount += 1
                         // Cap the retained transcript — a 10-minute energy run
                         // would otherwise build a multi-MB string we never use
-                        // (only the first 200 chars are kept as outputSample).
+                        // (short-chat etc. keep only the first 200 chars; the
+                        // quality task keeps the whole capped string for scoring).
                         if collectedOutput.count < 4000 {
                             collectedOutput.append(text)
                         }
@@ -248,6 +249,7 @@ public actor BenchmarkRunner {
             decodeTokensPerSecond: decodeTokS,
             promptTokenCount: promptTokens,
             generatedTokenCount: genTokens,
+            streamedChunkCount: tokenCount,
             totalGenerationTimeSeconds: totalTime,
             cancellationLatencyMS: nil,
             stopReason: stopReason,
