@@ -173,19 +173,22 @@ Conditions: **fair** (0.13.1 · Release · 128-token cap · phys_footprint). Lit
 
 > ⚠️ Some runs started at `fair`, not `nominal` (device warmed mid-matrix). Decode is throttle-insensitive at `fair` and the per-run values are consistent, but flagged for full rigor.
 
-**qwen3-1.7b:** LiteRT-LM is **#3 on decode** (30 vs MLX-Swift 66, −54%) and #2 on memory (512 MB) → _room to grow_. LiteRT's memory is its real footprint (INT8 decoder + the INT8 embedding table it keeps + Metal working buffers), not KV pre-allocation waste — so the gap to a dynamic-KV runtime like MLX is structural, and a fair thing to show rather than hide.
+**qwen3-1.7b:** LiteRT-LM is **#2 on decode** (50 vs MLX-Swift 66, −24%) and #2 on memory (446 MB) → _room to grow_. LiteRT's memory is its real footprint (INT4 decoder + the INT8 embedding table it keeps + Metal working buffers), not KV pre-allocation waste — so the gap to a dynamic-KV runtime like MLX is structural, and a fair thing to show rather than hide.
 
 ### Throughput — short-chat, cold, median of n=3
 
 | Runtime | Quant | n | Decode tok/s | TTFT ms | Prefill tok/s | Peak RAM MB | ITL p99 ms |
 |---|---|---:|---:|---:|---:|---:|---:|
 | LiteRT-LM / GPU | INT8 (dynamic, ekv1024) | 3 | 30.1 | 453 | — | 512 | 36.1 |
+| LiteRT-LM / GPU (int4-mixed) | INT4 (mixed, int8 embed) | 3 | 49.8 | 1161 | — | 446 | 22.7 |
 | MLX-Swift / GPU | Q4 | 3 | 65.8 🏆 | 87 | 230 | 1095 | 16.8 |
 | Core AI / GPU | INT4 (dynamic) | 3 | 44.7→66† 🏆warm | 29 | 753 | 248 | 16.5 |
 
 > **† Core AI / GPU** is shown **cold → warm** (45 → 66 tok/s): its Metal pipeline kernel cache persists across launches, so only the first launch after a fresh install is genuinely cold (n=1, 45); once primed it holds ~66 — the steady-state a user actually sees, and the fastest here. The **cold** figure is ranked against the cold-consistent runtimes (where cold = warm); the **warm** figure carries its own 🏆warm. Shown side-by-side rather than blended into a warm-biased median or hidden behind a cold-only number.
 
 > ⚠️ **Core AI / ANE** (`static-shape`) is absent here by **invoke-failure, not omission**: the 1.7B static-shape ANE export loads but does not invoke on-device — a full run window produced no JSONL, while the Core AI **GPU** export (above) ran the same model cleanly. This is the same ANE invoke ceiling the 4B static export hits, so the GPU (`coreai-pipelined`) export is the only Core AI path that invokes ≥1.7B on this device. LiteRT-LM, by contrast, **does** invoke 1.7B (rows above) — its iOS invoke ceiling sits above 1.7B.
+>
+> **Two LiteRT rows (int8 vs int4-mixed):** the int8 row is the safe baseline; the **int4-mixed** row (int4 body + int8 tied-embedding/lm_head) **roughly halves the gap** to the int4 peers vs MLX (from ~−54% at int8 to ~−25%), and is faster than Core AI's *cold* number. The earlier "PTQ int4 collapses sub-2B" was specifically the **embedding at int4**; keep it int8 and the int4 body is coherent (7/8 quality, no degeneracy). The residual gap to pure-int4 runtimes is that int8 embedding/lm_head — the heaviest per-token read — which a 4-bit-QAT lm_head (not PTQ, which *does* collapse it) would close.
 
 
 ---
@@ -216,6 +219,9 @@ Conditions: **fair** (0.13.1 · Release · 128-token cap · phys_footprint). Lit
 - [`iphone17pro-litert-lm-qwen3-0.6b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-0.6b-short-chat-run1.jsonl)
 - [`iphone17pro-litert-lm-qwen3-0.6b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-0.6b-short-chat-run2.jsonl)
 - [`iphone17pro-litert-lm-qwen3-0.6b-short-chat-run3.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-0.6b-short-chat-run3.jsonl)
+- [`iphone17pro-litert-lm-qwen3-1.7b-int4-short-chat-run1.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-1.7b-int4-short-chat-run1.jsonl)
+- [`iphone17pro-litert-lm-qwen3-1.7b-int4-short-chat-run2.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-1.7b-int4-short-chat-run2.jsonl)
+- [`iphone17pro-litert-lm-qwen3-1.7b-int4-short-chat-run3.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-1.7b-int4-short-chat-run3.jsonl)
 - [`iphone17pro-litert-lm-qwen3-1.7b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-1.7b-short-chat-run1.jsonl)
 - [`iphone17pro-litert-lm-qwen3-1.7b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-1.7b-short-chat-run2.jsonl)
 - [`iphone17pro-litert-lm-qwen3-1.7b-short-chat-run3.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-1.7b-short-chat-run3.jsonl)

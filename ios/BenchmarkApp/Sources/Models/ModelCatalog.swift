@@ -391,11 +391,14 @@ public enum ModelCatalog {
             hfFilePatterns: ["MiniCPM5-1B_int4_ekv1024.litertlm"],
             primaryFile: "MiniCPM5-1B_int4_ekv1024.litertlm"
         ),
-        // Qwen3-1.7B — litert-community has NO 1.7B (only 0.6B/4B/8B/14B), so this is
-        // OUR own conversion (scripts/export_coreai_qwen3.sh has the Core AI side; the
-        // LiteRT side is `litertlm-convert/export_simple_template.py … dynamic_wi8_afp32`).
-        // INT8, not INT4: PTQ INT4 collapses sub-2B models (the convert pipeline's banked
-        // finding) — so this row is disclosed as int8 vs the official 0.6B/4B int4-QAT rows.
+        // Qwen3-1.7B — litert-community has NO 1.7B (only 0.6B/4B/8B/14B), so these are
+        // OUR own conversions (scripts/export_coreai_qwen3.sh has the Core AI side; the
+        // LiteRT side is `litertlm-convert/export_simple_template.py`). Two LiteRT rows:
+        //   • int8 (safe baseline, `dynamic_wi8_afp32`)
+        //   • int4 mixed (`MIXED4`: int4 body + int8 tied-embedding/lm_head). The earlier
+        //     "PTQ int4 collapses sub-2B" was specifically the EMBEDDING at int4 — keep it
+        //     int8 and the int4 body is coherent (7/8 Mac, +28% decode vs int8). Both
+        //     disclosed vs the official 0.6B/4B int4-QAT rows.
         // Side-loaded (no HF download); the 1.7B is the iPhone-ceiling probe between the
         // 0.6B that invokes and the 4B that invoke-fails on iOS.
         ModelInfo(
@@ -405,6 +408,16 @@ public enum ModelCatalog {
             parameterCountB: 1.7,
             onDiskSizeMB: 1663,
             hfRepoId: "litert-local/Qwen3-1.7B",
+            hfFilePatterns: ["*.litertlm"],
+            primaryFile: "model.litertlm"
+        ),
+        ModelInfo(
+            id: "litert-local/qwen3-1.7b-int4",
+            displayName: "Qwen3-1.7B (.litertlm, local int4 mixed)",
+            quantization: "INT4 (mixed, int8 embed)",
+            parameterCountB: 1.7,
+            onDiskSizeMB: 1438,
+            hfRepoId: "litert-local/Qwen3-1.7B-int4",
             hfFilePatterns: ["*.litertlm"],
             primaryFile: "model.litertlm"
         ),

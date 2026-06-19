@@ -33,6 +33,10 @@ OUT = REPO / "docs" / "litert-lm" / "README.md"
 # appended to the model when globbing so both land in the same model's comparison.
 RUNTIMES = [
     ("litert-lm", ["litert-lm"], "litert-lm", "LiteRT-LM / GPU", ""),
+    # int4-mixed variant of a local LiteRT model — a second row in the SAME model section
+    # (suffix "-int4" on the file), so int8 vs int4 sit next to the int4 peers. Only matches
+    # where a *-int4 capture exists (Qwen3-1.7B); a no-op for every other model.
+    ("litert-lm", ["litert-lm"], "litert-lm", "LiteRT-LM / GPU (int4-mixed)", "-int4"),
     ("mlx-swift", ["mlx-swift", "mlx"], "mlx-swift", "MLX-Swift / GPU", ""),
     ("llama-cpp", ["llama-cpp"], "llama-cpp", "llama.cpp / GPU", ""),
     ("coreml-llm", ["coreml-llm"], "coreml-llm", "CoreML / ANE", ""),
@@ -104,6 +108,10 @@ def discover():
         if dev in SEPARATE_DEVICES:
             continue
         model = rest.split("-short-chat-run1.jsonl")[0]
+        # `-int4` is a quant variant of its base model (rendered as a second LiteRT row in
+        # the base section via the RUNTIMES suffix), not a section of its own.
+        if model.endswith("-int4"):
+            continue
         out.setdefault(dev, [])
         if model not in out[dev]:
             out[dev].append(model)
@@ -344,7 +352,14 @@ INVOKE_CEILING = {
         "no JSONL, while the Core AI **GPU** export (above) ran the same model cleanly. This is the same "
         "ANE invoke ceiling the 4B static export hits, so the GPU (`coreai-pipelined`) export is the only "
         "Core AI path that invokes ≥1.7B on this device. LiteRT-LM, by contrast, **does** invoke 1.7B "
-        "(rows above) — its iOS invoke ceiling sits above 1.7B.",
+        "(rows above) — its iOS invoke ceiling sits above 1.7B.\n>\n> "
+        "**Two LiteRT rows (int8 vs int4-mixed):** the int8 row is the safe baseline; the **int4-mixed** "
+        "row (int4 body + int8 tied-embedding/lm_head) **roughly halves the gap** to the int4 peers vs MLX "
+        "(from ~−54% at int8 to ~−25%), and is faster than Core AI's *cold* number. The earlier \"PTQ int4 collapses "
+        "sub-2B\" was specifically the **embedding at int4**; keep it int8 and the int4 body is coherent "
+        "(7/8 quality, no degeneracy). The residual gap to pure-int4 runtimes is that int8 "
+        "embedding/lm_head — the heaviest per-token read — which a 4-bit-QAT lm_head (not PTQ, which "
+        "*does* collapse it) would close.",
 }
 
 
@@ -359,7 +374,10 @@ def md_sustained_gap(rows, model):
 def md_synthesis(rows, model):
     """Where LiteRT-LM wins / has room to grow, straight from the numbers."""
     tp = rows["throughput"]
-    lit = next((r for r in tp if r["key"] == "litert-lm"), None)
+    # A model can carry two LiteRT rows (int8 baseline + int4-mixed). Speak to the FASTEST
+    # one — the best LiteRT can currently do here — while both stay visible in the table.
+    lits = [r for r in tp if r["key"] == "litert-lm"]
+    lit = max(lits, key=lambda r: r["decode"]) if lits else None
     if not lit or len(tp) < 2:
         return None
     by_dec = sorted(tp, key=lambda r: -r["decode"])
