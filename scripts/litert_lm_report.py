@@ -333,6 +333,21 @@ CAPTURE_NOTES = {
 }
 
 
+# Configs attempted on-device that produced NO JSONL because they fail to *invoke* (load
+# succeeds, execution doesn't) — recorded so an absent row reads as "tried, invoke-failed"
+# rather than "never tested". Keyed (device, model); rendered in that model's section even
+# though there is no row to hang a CAPTURE_NOTES line on.
+INVOKE_CEILING = {
+    ("iphone17pro", "qwen3-1.7b"):
+        "**Core AI / ANE** (`static-shape`) is absent here by **invoke-failure, not omission**: the "
+        "1.7B static-shape ANE export loads but does not invoke on-device — a full run window produced "
+        "no JSONL, while the Core AI **GPU** export (above) ran the same model cleanly. This is the same "
+        "ANE invoke ceiling the 4B static export hits, so the GPU (`coreai-pipelined`) export is the only "
+        "Core AI path that invokes ≥1.7B on this device. LiteRT-LM, by contrast, **does** invoke 1.7B "
+        "(rows above) — its iOS invoke ceiling sits above 1.7B.",
+}
+
+
 def md_sustained_gap(rows, model):
     """Note runtimes that produced short-chat data but no sustained/energy run (fairness rule 4)."""
     have = {r["label"] for r in rows["throttle"]} | {r["label"] for r in rows["energy"]}
@@ -366,8 +381,11 @@ def md_synthesis(rows, model):
                else f"#{mem_rank} on memory ({lit['peakmem']:.0f} MB)")
     verdict = ("a clean LiteRT-LM win" if dec_rank == 1 and mem_rank == 1
                else "room to grow" if dec_rank > 1 else "a decode win with a memory cost")
+    # Decoder bit-width is per-row (0.6b is INT4, the local 1.7b is INT8) — read it off the
+    # litert row rather than hardcoding, so the prose can't contradict the disclosed quant.
+    dec_q = lit["quant"].split()[0] if lit.get("quant", "").upper().startswith("INT") else "quantized"
     return (f"**{name}:** LiteRT-LM {dec} and {mem} → _{verdict}_. "
-            f"LiteRT's memory is its real footprint (INT4 decoder + the INT8 embedding table it "
+            f"LiteRT's memory is its real footprint ({dec_q} decoder + the INT8 embedding table it "
             f"keeps + Metal working buffers), not KV pre-allocation waste — so the gap to a dynamic-KV "
             f"runtime like MLX is structural, and a fair thing to show rather than hide.")
 
@@ -530,6 +548,10 @@ def main():
                          f"same-conditions table pending a fair (Release / iOS 27) re-capture.")
                          for k, label in pending_tp]
                 parts.append("> ⚠️ " + "\n>\n> ".join(lines) + "\n")
+
+            ceiling = INVOKE_CEILING.get((device, model))
+            if ceiling:
+                parts.append("> ⚠️ " + ceiling + "\n")
 
             bw = md_bandwidth(rows, model, dev.get("modelIdentifier"))
             if bw:

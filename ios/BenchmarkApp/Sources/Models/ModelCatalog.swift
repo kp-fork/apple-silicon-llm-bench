@@ -403,10 +403,10 @@ public enum ModelCatalog {
             displayName: "Qwen3-1.7B (.litertlm, local int8)",
             quantization: "INT8 (dynamic, ekv1024)",
             parameterCountB: 1.7,
-            onDiskSizeMB: 1900,
+            onDiskSizeMB: 1663,
             hfRepoId: "litert-local/Qwen3-1.7B",
             hfFilePatterns: ["*.litertlm"],
-            primaryFile: ""
+            primaryFile: "model.litertlm"
         ),
         // Qwen3 4B / 8B — same mixed-INT4 .litertlm line as 0.6B, for a size-scaling
         // curve (0.6B → 4B → 8B). 8B (~4.4 GB) is desktop/Mac-tier; on phones it can

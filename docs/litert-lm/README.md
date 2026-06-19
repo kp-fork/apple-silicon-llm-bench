@@ -167,6 +167,29 @@ Conditions: **fair** (0.13.1 · Release · 128-token cap · phys_footprint). Lit
 
 ---
 
+## qwen3-1.7b — iphone17pro (iPhone18,1 · iOS 27.0)
+
+Conditions: **fair** (0.13.1 · Release · 128-token cap · phys_footprint). LiteRT file `model.litertlm` · quant INT8 (dynamic, ekv1024) · 1663 MB on disk.
+
+> ⚠️ Some runs started at `fair`, not `nominal` (device warmed mid-matrix). Decode is throttle-insensitive at `fair` and the per-run values are consistent, but flagged for full rigor.
+
+**qwen3-1.7b:** LiteRT-LM is **#3 on decode** (30 vs MLX-Swift 66, −54%) and #2 on memory (512 MB) → _room to grow_. LiteRT's memory is its real footprint (INT8 decoder + the INT8 embedding table it keeps + Metal working buffers), not KV pre-allocation waste — so the gap to a dynamic-KV runtime like MLX is structural, and a fair thing to show rather than hide.
+
+### Throughput — short-chat, cold, median of n=3
+
+| Runtime | Quant | n | Decode tok/s | TTFT ms | Prefill tok/s | Peak RAM MB | ITL p99 ms |
+|---|---|---:|---:|---:|---:|---:|---:|
+| LiteRT-LM / GPU | INT8 (dynamic, ekv1024) | 3 | 30.1 | 453 | — | 512 | 36.1 |
+| MLX-Swift / GPU | Q4 | 3 | 65.8 🏆 | 87 | 230 | 1095 | 16.8 |
+| Core AI / GPU | INT4 (dynamic) | 3 | 44.7→66† 🏆warm | 29 | 753 | 248 | 16.5 |
+
+> **† Core AI / GPU** is shown **cold → warm** (45 → 66 tok/s): its Metal pipeline kernel cache persists across launches, so only the first launch after a fresh install is genuinely cold (n=1, 45); once primed it holds ~66 — the steady-state a user actually sees, and the fastest here. The **cold** figure is ranked against the cold-consistent runtimes (where cold = warm); the **warm** figure carries its own 🏆warm. Shown side-by-side rather than blended into a warm-biased median or hidden behind a cold-only number.
+
+> ⚠️ **Core AI / ANE** (`static-shape`) is absent here by **invoke-failure, not omission**: the 1.7B static-shape ANE export loads but does not invoke on-device — a full run window produced no JSONL, while the Core AI **GPU** export (above) ran the same model cleanly. This is the same ANE invoke ceiling the 4B static export hits, so the GPU (`coreai-pipelined`) export is the only Core AI path that invokes ≥1.7B on this device. LiteRT-LM, by contrast, **does** invoke 1.7B (rows above) — its iOS invoke ceiling sits above 1.7B.
+
+
+---
+
 ## Provenance — every cell traces to a raw file
 
 - [`iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run1.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-ane-short-chat-run1.jsonl)
@@ -175,6 +198,9 @@ Conditions: **fair** (0.13.1 · Release · 128-token cap · phys_footprint). Lit
 - [`iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run1.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run1.jsonl)
 - [`iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run2.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run2.jsonl)
 - [`iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run3.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-0.6b-gpu-short-chat-run3.jsonl)
+- [`iphone17pro-core-ai-qwen3-1.7b-gpu-short-chat-run1.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-1.7b-gpu-short-chat-run1.jsonl)
+- [`iphone17pro-core-ai-qwen3-1.7b-gpu-short-chat-run2.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-1.7b-gpu-short-chat-run2.jsonl)
+- [`iphone17pro-core-ai-qwen3-1.7b-gpu-short-chat-run3.jsonl`](../../results/raw/iphone17pro-core-ai-qwen3-1.7b-gpu-short-chat-run3.jsonl)
 - [`iphone17pro-coreml-llm-gemma-4-e2b-energy-tg128.jsonl`](../../results/raw/iphone17pro-coreml-llm-gemma-4-e2b-energy-tg128.jsonl)
 - [`iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run1.jsonl)
 - [`iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-coreml-llm-gemma-4-e2b-short-chat-run2.jsonl)
@@ -190,12 +216,18 @@ Conditions: **fair** (0.13.1 · Release · 128-token cap · phys_footprint). Lit
 - [`iphone17pro-litert-lm-qwen3-0.6b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-0.6b-short-chat-run1.jsonl)
 - [`iphone17pro-litert-lm-qwen3-0.6b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-0.6b-short-chat-run2.jsonl)
 - [`iphone17pro-litert-lm-qwen3-0.6b-short-chat-run3.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-0.6b-short-chat-run3.jsonl)
+- [`iphone17pro-litert-lm-qwen3-1.7b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-1.7b-short-chat-run1.jsonl)
+- [`iphone17pro-litert-lm-qwen3-1.7b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-1.7b-short-chat-run2.jsonl)
+- [`iphone17pro-litert-lm-qwen3-1.7b-short-chat-run3.jsonl`](../../results/raw/iphone17pro-litert-lm-qwen3-1.7b-short-chat-run3.jsonl)
 - [`iphone17pro-llama-cpp-gemma-4-e2b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-llama-cpp-gemma-4-e2b-short-chat-run1.jsonl)
 - [`iphone17pro-llama-cpp-gemma-4-e2b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-llama-cpp-gemma-4-e2b-short-chat-run2.jsonl)
 - [`iphone17pro-llama-cpp-gemma-4-e2b-short-chat-run3.jsonl`](../../results/raw/iphone17pro-llama-cpp-gemma-4-e2b-short-chat-run3.jsonl)
 - [`iphone17pro-mlx-gemma-4-e2b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-mlx-gemma-4-e2b-short-chat-run1.jsonl)
 - [`iphone17pro-mlx-gemma-4-e2b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-mlx-gemma-4-e2b-short-chat-run2.jsonl)
 - [`iphone17pro-mlx-gemma-4-e2b-short-chat-run3.jsonl`](../../results/raw/iphone17pro-mlx-gemma-4-e2b-short-chat-run3.jsonl)
+- [`iphone17pro-mlx-qwen3-1.7b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-mlx-qwen3-1.7b-short-chat-run1.jsonl)
+- [`iphone17pro-mlx-qwen3-1.7b-short-chat-run2.jsonl`](../../results/raw/iphone17pro-mlx-qwen3-1.7b-short-chat-run2.jsonl)
+- [`iphone17pro-mlx-qwen3-1.7b-short-chat-run3.jsonl`](../../results/raw/iphone17pro-mlx-qwen3-1.7b-short-chat-run3.jsonl)
 - [`iphone17pro-mlx-swift-gemma-4-e2b-energy-tg128.jsonl`](../../results/raw/iphone17pro-mlx-swift-gemma-4-e2b-energy-tg128.jsonl)
 - [`iphone17pro-mlx-swift-qwen3-0.6b-energy-tg128.jsonl`](../../results/raw/iphone17pro-mlx-swift-qwen3-0.6b-energy-tg128.jsonl)
 - [`iphone17pro-mlx-swift-qwen3-0.6b-short-chat-run1.jsonl`](../../results/raw/iphone17pro-mlx-swift-qwen3-0.6b-short-chat-run1.jsonl)
