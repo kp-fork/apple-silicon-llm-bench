@@ -792,6 +792,42 @@ public enum ModelCatalog {
             hfRepoId: ""
         ),
         ModelInfo(
+            id: "core-ai/deepseek-r1-1.5b-ane",
+            displayName: "DeepSeek-R1-1.5B (Core AI, ANE)",
+            quantization: "4-bit palettized (uniform g32)",
+            parameterCountB: 1.5, onDiskSizeMB: 1300, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/deepseek-r1-1.5b-gpu",
+            displayName: "DeepSeek-R1-1.5B (Core AI, GPU)",
+            quantization: "INT4 (dynamic)",
+            parameterCountB: 1.5, onDiskSizeMB: 900, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/tinyswallow-1.5b-ane",
+            displayName: "TinySwallow-1.5B (Core AI, ANE)",
+            quantization: "4-bit palettized (uniform g32)",
+            parameterCountB: 1.5, onDiskSizeMB: 1300, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/tinyswallow-1.5b-gpu",
+            displayName: "TinySwallow-1.5B (Core AI, GPU)",
+            quantization: "INT4 (dynamic)",
+            parameterCountB: 1.5, onDiskSizeMB: 900, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/vibethinker-1.5b-ane",
+            displayName: "VibeThinker-1.5B (Core AI, ANE)",
+            quantization: "4-bit palettized (uniform g32)",
+            parameterCountB: 1.5, onDiskSizeMB: 1300, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/vibethinker-1.5b-gpu",
+            displayName: "VibeThinker-1.5B (Core AI, GPU)",
+            quantization: "INT4 (dynamic)",
+            parameterCountB: 1.5, onDiskSizeMB: 900, hfRepoId: ""
+        ),
+        ModelInfo(
             id: "core-ai/qwen3-4b-ane",
             displayName: "Qwen3-4B (Core AI, ANE)",
             quantization: "4-bit palettized (uniform g32)",

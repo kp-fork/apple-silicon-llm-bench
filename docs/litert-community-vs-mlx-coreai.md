@@ -96,27 +96,31 @@ qwen2 / qwen3 / gemma3 / mistral wrappers. `†` Gemma3-1B Core AI via a local t
    TinySwallow 324.1/326.7, VibeThinker 322.7/—) — same architecture, same Apple-GPU ceiling; Core AI and MLX
    are statistically tied, LiteRT-LM's published int8 builds sit at ~half that (bandwidth, not runtime).
 
-## iPhone 17 Pro (on-device) — MLX vs LiteRT-LM (short-chat, 128 tok, median of 3 cold runs)
+## iPhone 17 Pro (on-device) — Core AI vs MLX vs LiteRT-LM (short-chat, 128 tok, median of 3 cold)
 
-| Model | **MLX** | **LiteRT** | MLX/LiteRT | notes |
-|---|--:|--:|--:|---|
-| DeepSeek-R1-1.5B | **73.0** | **30.7** | 2.4× | int4 MLX vs int8 LiteRT |
-| TinySwallow-1.5B | **71.6** | **30.6** | 2.3× | int4 vs int8 |
-| VibeThinker-1.5B | — | **30.4** | — | no mlx-community repo |
-| Gemma3-1B | **97.6** | — | — | LiteRT mirror gated (Mac self-conv 185.7) |
-| Phi-4-mini | **29.6** | — | — | LiteRT 4 GB int8 = OOM-skip on iPhone |
-| OLMo-2-1B | — | **24.6** | — | no mlx-community repo |
-| Qwen3-1.7B | **62.8** | **23.2** | **2.7×** | iso int4 |
-| Llama-3.2-3B | **34.0** | **19.5** | **1.7×** | iso int4; extemb LiteRT flaky (1/3) |
-| SmolLM3-3B | **36.8** | **22.8** | **1.6×** | iso int4 |
-| Ministral-3-3B | ✗ | ✗ | — | MLX-Swift can't load `ministral3` arch; LiteRT extemb engine-fail |
+| Model | **Core AI ANE** | **Core AI GPU** | **MLX** | **LiteRT** |
+|---|--:|--:|--:|--:|
+| DeepSeek-R1-1.5B | **83.3** | **75.9** | **73.0** | **30.7** |
+| TinySwallow-1.5B | **74.8** | **75.0** | **71.6** | **30.6** |
+| VibeThinker-1.5B | ⏳ | **75.7** | — | **30.4** |
+| Qwen3-1.7B | **64.8** | **67.6** | **62.8** | **23.2** |
+| Gemma3-1B | ✗ no iOS class | — | **97.6** | gated |
+| Phi-4-mini | ✗ no wrapper | — | **29.6** | OOM |
+| OLMo-2-1B | ✗ no wrapper | — | — | **24.6** |
+| Llama-3.2-3B | ✗ 3B OOM | — | **34.0** | **19.5**† |
+| SmolLM3-3B | ✗ no wrapper | — | **36.8** | **22.8** |
+| Ministral-3-3B | ✗ 3B/arch | — | ✗ | ✗ |
 
-**The Apple-GPU gap holds on-device: MLX ≈ 1.6–2.7× LiteRT-LM on the iPhone 17 Pro GPU** — same-model, iso-int4:
-Qwen3-1.7B 62.8 vs 23.2 (2.7×), Llama-3.2-3B 34.0 vs 19.5 (1.7×), SmolLM3-3B 36.8 vs 22.8 (1.6×). Not a Mac
-artifact. iPhone MLX ~62–98 tok/s (1–1.7B int4) / ~30–37 (3B); iPhone LiteRT ~20–31 tok/s (int4 own, int8
-community). Peak mem 0.6–2.3 GB. The litert-community 1.5B int8 builds cluster tightly at ~30.5 (DeepSeek/
-TinySwallow/VibeThinker). **iPhone MLX-Swift has a narrower arch set than Mac mlx_lm** — it can't load Ministral
-(`ministral3`); OLMo-2/VibeThinker also lack mlx-community repos (Mac used local conversions).
+**On-device, Core AI ≥ MLX ≫ LiteRT-LM — and Core AI's ANE is the trump card MLX/LiteRT structurally can't use.**
+For the qwen-arch ≤1.7B that Core AI iOS covers: DeepSeek-R1 **ANE 83.3** / GPU 75.9 vs MLX 73.0 vs LiteRT 30.7;
+TinySwallow 74.8 / 75.0 vs 71.6 vs 30.6; Qwen3-1.7B 64.8 / 67.6 vs 62.8 vs 23.2. **Core AI ≈-or-beats MLX (the
+ANE tops MLX on DeepSeek-R1, 83 vs 73), and both are ~2.5× LiteRT-LM.** The **ANE (Apple Neural Engine) is
+reachable only via Core AI / CoreML** — MLX and LiteRT-LM are GPU-only on Apple — so it's also the most
+power-efficient path; this is Core AI's real on-device edge, invisible on Mac. The MLX-vs-LiteRT gap is 1.6–2.7×
+iso-int4 (Qwen3-1.7B 62.8 vs 23.2; Llama-3.2-3B 34.0 vs 19.5; SmolLM3-3B 36.8 vs 22.8). Core AI iOS coverage here
+= qwen2/qwen3 ≤1.7B (mistral-3B OOMs on-device; gemma3 has no iOS export class; phi3/olmo2/smollm3 no wrapper);
+iPhone MLX-Swift can't load `ministral3`, and OLMo-2/VibeThinker lack mlx-community repos. (VibeThinker ANE bundle
+pending — its compile was interrupted by a Mac crash; everything else is measured.)
 
 **🐛 iPhone LiteRT bug — externalized-embedding `.litertlm` are unreliable on the iOS runtime.** The two builds
 that split the embedding into its own section (`externalize_embedder=True`, used to stay under the iOS ~2 GiB

@@ -1,0 +1,29 @@
+=== install updated app ===
+• options: 
+##### core-ai/deepseek-r1-1.5b-ane #####
+  pushed deepseek_r1_1_5b_ane
+  run1 :: 
+  run2 :: 
+  run3 :: 
+##### core-ai/deepseek-r1-1.5b-gpu #####
+  PUSH FAIL deepseek_r1_1_5b_gpu
+  run1 :: 
+  run2 :: YARDSTICK_RUN_FAIL run=1 error=Model load failed: Core AI bundle 'deepseek_r1_1_5b_gpu' not found. Side-load the exported folder into Documents/CoreAIModels/deepseek_r1_1_5b_gpu/ (it must contain metadata.json, the .aimodel, and tokenizer/).
+  run3 :: YARDSTICK_RUN_FAIL run=1 error=Model load failed: Core AI bundle 'deepseek_r1_1_5b_gpu' not found. Side-load the exported folder into Documents/CoreAIModels/deepseek_r1_1_5b_gpu/ (it must contain metadata.json, the .aimodel, and tokenizer/).
+##### core-ai/tinyswallow-1.5b-ane #####
+  pushed tinyswallow_1_5b_ane
+  run1 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=72.95 ttft_ms=103 peak_mb=1288 tokens=100
+  run2 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=74.75 ttft_ms=52 peak_mb=1293 tokens=100
+  run3 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=74.88 ttft_ms=51 peak_mb=1293 tokens=100
+##### core-ai/tinyswallow-1.5b-gpu #####
+  pushed tinyswallow_1_5b_gpu
+  run1 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=30.45 ttft_ms=298 peak_mb=255 tokens=128
+  run2 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=74.95 ttft_ms=49 peak_mb=228 tokens=128
+  run3 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=75.44 ttft_ms=42 peak_mb=226 tokens=128
+##### core-ai/vibethinker-1.5b-ane: bundle not ready, skip
+##### core-ai/vibethinker-1.5b-gpu #####
+  pushed vibethinker_1_5b_gpu
+  run1 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=68.25 ttft_ms=270 peak_mb=234 tokens=128
+  run2 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=75.69 ttft_ms=32 peak_mb=234 tokens=128
+  run3 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=75.90 ttft_ms=37 peak_mb=235 tokens=128
+DONE
