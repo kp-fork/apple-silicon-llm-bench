@@ -201,6 +201,64 @@ public enum ModelCatalog {
             onDiskSizeMB: 17_500,
             hfRepoId: "mlx-community/gemma-4-31b-it-4bit"
         ),
+
+        // --- Cross-runtime comparison set (vs LiteRT-LM on iPhone 17 Pro) ---
+        ModelInfo(
+            id: "mlx-community/DeepSeek-R1-Distill-Qwen-1.5B-4bit",
+            displayName: "DeepSeek-R1-Distill-Qwen-1.5B (4-bit)",
+            quantization: "Q4",
+            parameterCountB: 1.5,
+            onDiskSizeMB: 1000,
+            hfRepoId: "mlx-community/DeepSeek-R1-Distill-Qwen-1.5B-4bit"
+        ),
+        ModelInfo(
+            id: "mlx-community/Phi-4-mini-instruct-4bit",
+            displayName: "Phi-4-mini (4-bit)",
+            quantization: "Q4",
+            parameterCountB: 3.8,
+            onDiskSizeMB: 2100,
+            hfRepoId: "mlx-community/Phi-4-mini-instruct-4bit"
+        ),
+        ModelInfo(
+            id: "mlx-community/gemma-3-1b-it-4bit",
+            displayName: "Gemma3-1B-IT (4-bit)",
+            quantization: "Q4",
+            parameterCountB: 1.0,
+            onDiskSizeMB: 700,
+            hfRepoId: "mlx-community/gemma-3-1b-it-4bit"
+        ),
+        ModelInfo(
+            id: "mlx-community/TinySwallow-1.5B-Instruct-4bit",
+            displayName: "TinySwallow-1.5B (4-bit)",
+            quantization: "Q4",
+            parameterCountB: 1.5,
+            onDiskSizeMB: 900,
+            hfRepoId: "mlx-community/TinySwallow-1.5B-Instruct-4bit"
+        ),
+        ModelInfo(
+            id: "mlx-community/Llama-3.2-3B-Instruct-4bit",
+            displayName: "Llama-3.2-3B (4-bit)",
+            quantization: "Q4",
+            parameterCountB: 3.0,
+            onDiskSizeMB: 1800,
+            hfRepoId: "mlx-community/Llama-3.2-3B-Instruct-4bit"
+        ),
+        ModelInfo(
+            id: "mlx-community/SmolLM3-3B-4bit",
+            displayName: "SmolLM3-3B (4-bit)",
+            quantization: "Q4",
+            parameterCountB: 3.0,
+            onDiskSizeMB: 1700,
+            hfRepoId: "mlx-community/SmolLM3-3B-4bit"
+        ),
+        ModelInfo(
+            id: "mlx-community/Ministral-3-3B-Instruct-2512-4bit",
+            displayName: "Ministral-3-3B (4-bit)",
+            quantization: "Q4",
+            parameterCountB: 3.0,
+            onDiskSizeMB: 1700,
+            hfRepoId: "mlx-community/Ministral-3-3B-Instruct-2512-4bit"
+        ),
     ]
 
     /// Models the llama.cpp adapter can load.
@@ -483,6 +541,81 @@ public enum ModelCatalog {
             hfRepoId: "google/gemma-3n-E2B-it-litert-lm",
             hfFilePatterns: ["*.litertlm"],
             primaryFile: ""
+        ),
+
+        // --- Cross-runtime comparison set (vs MLX on iPhone 17 Pro) ---
+        // litert-community DOWNLOAD entries (fetched on-device).
+        ModelInfo(
+            id: "litert-community/DeepSeek-R1-Distill-Qwen-1.5B",
+            displayName: "DeepSeek-R1-Distill-Qwen-1.5B (.litertlm)",
+            quantization: "INT8",
+            parameterCountB: 1.5,
+            onDiskSizeMB: 1700,
+            hfRepoId: "litert-community/DeepSeek-R1-Distill-Qwen-1.5B",
+            hfFilePatterns: ["DeepSeek-R1-Distill-Qwen-1.5B_multi-prefill-seq_q8_ekv4096.litertlm"],
+            primaryFile: "DeepSeek-R1-Distill-Qwen-1.5B_multi-prefill-seq_q8_ekv4096.litertlm"
+        ),
+        ModelInfo(
+            id: "litert-community/TinySwallow-1.5B-Instruct",
+            displayName: "TinySwallow-1.5B (.litertlm)",
+            quantization: "INT8",
+            parameterCountB: 1.5,
+            onDiskSizeMB: 1700,
+            hfRepoId: "litert-community/TinySwallow-1.5B-Instruct",
+            hfFilePatterns: ["TinySwallow-1.5B-Instruct.litertlm"],
+            primaryFile: "TinySwallow-1.5B-Instruct.litertlm"
+        ),
+        ModelInfo(
+            id: "litert-community/VibeThinker-1.5B",
+            displayName: "VibeThinker-1.5B (.litertlm)",
+            quantization: "INT8",
+            parameterCountB: 1.5,
+            onDiskSizeMB: 1700,
+            hfRepoId: "litert-community/VibeThinker-1.5B",
+            hfFilePatterns: ["VibeThinker-1.5B.litertlm"],
+            primaryFile: "VibeThinker-1.5B.litertlm"
+        ),
+        // litert-local SIDE-LOAD entries (placed on device at
+        // Documents/models/litert-lm/<hfRepoId "/"→"__">/model.litertlm).
+        ModelInfo(
+            id: "litert-local/olmo2-1b",
+            displayName: "OLMo-2-1B (.litertlm, local int4)",
+            quantization: "INT4",
+            parameterCountB: 1.0,
+            onDiskSizeMB: 888,
+            hfRepoId: "litert-local/OLMo-2-1B",
+            hfFilePatterns: ["*.litertlm"],
+            primaryFile: "model.litertlm"
+        ),
+        ModelInfo(
+            id: "litert-local/llama32-3b",
+            displayName: "Llama-3.2-3B (.litertlm, local int4)",
+            quantization: "INT4",
+            parameterCountB: 3.0,
+            onDiskSizeMB: 2100,
+            hfRepoId: "litert-local/Llama-3.2-3B",
+            hfFilePatterns: ["*.litertlm"],
+            primaryFile: "model.litertlm"
+        ),
+        ModelInfo(
+            id: "litert-local/smollm3-3b",
+            displayName: "SmolLM3-3B (.litertlm, local int4)",
+            quantization: "INT4",
+            parameterCountB: 3.0,
+            onDiskSizeMB: 1900,
+            hfRepoId: "litert-local/SmolLM3-3B",
+            hfFilePatterns: ["*.litertlm"],
+            primaryFile: "model.litertlm"
+        ),
+        ModelInfo(
+            id: "litert-local/ministral3-3b",
+            displayName: "Ministral-3-3B (.litertlm, local int4)",
+            quantization: "INT4",
+            parameterCountB: 3.0,
+            onDiskSizeMB: 2200,
+            hfRepoId: "litert-local/Ministral-3-3B",
+            hfFilePatterns: ["*.litertlm"],
+            primaryFile: "model.litertlm"
         ),
     ]
 

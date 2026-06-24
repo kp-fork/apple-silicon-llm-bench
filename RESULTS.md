@@ -4,6 +4,15 @@ On-device / on-Mac measurements. Each row is a `(runtime, model, device, task, b
 
 > **Coverage status (live)**: see the "Coverage snapshot" section below — it is regenerated whenever a contributor drops a new JSONL.
 
+> **Featured study (2026-06-24) — Core AI vs MLX vs LiteRT-LM, 10 litert-community + our-converter LLMs**
+> (Mac M4 Max + iPhone 17 Pro, **40 decode cells**): full tables, methodology & findings in
+> [`docs/litert-community-vs-mlx-coreai.md`](docs/litert-community-vs-mlx-coreai.md); raw rows in
+> [`results/raw/2026-06-24-litert-community-crossframework/`](results/raw/2026-06-24-litert-community-crossframework/decode-cells.jsonl).
+> Headline: **Core AI ≈ MLX ≫ LiteRT-LM on Apple GPU**, and it holds on-device (MLX ≈ 1.6–2.7× LiteRT iso-int4).
+> Three LiteRT-LM findings filed (externalize_embedder iOS load bug · ship int4 not int8 for community
+> DeepSeek/Phi · "Gemma gets first-class kernels, generic path doesn't"), plus a Core AI text-only-Gemma3
+> wrapper fix.
+
 ## Quality bar
 
 | Discipline | What we do today |
