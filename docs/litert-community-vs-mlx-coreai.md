@@ -107,9 +107,9 @@ qwen2 / qwen3 / gemma3 / mistral wrappers. `†` Gemma3-1B Core AI via a local t
 | Gemma3-1B | ✗ no iOS class | — | **97.6** | gated |
 | Phi-4-mini | ✗ no wrapper | — | **29.6** | OOM |
 | OLMo-2-1B | ✗ no wrapper | — | — | **24.6** |
-| Llama-3.2-3B | ✗ no iOS class | — | **34.0** | **19.5**† |
+| Llama-3.2-3B | ✗ no iOS class | — | **34.0** | **18.4** |
 | SmolLM3-3B | ✗ no wrapper | — | **36.8** | **22.8** |
-| Ministral-3-3B | ✗ arch | — | ✗ | ✗ |
+| Ministral-3-3B | ✗ arch | — | ✗ | **18.0** |
 
 **On-device, Core AI ≥ MLX ≫ LiteRT-LM — and Core AI's ANE is the trump card MLX/LiteRT structurally can't use.**
 For the qwen-arch ≤1.7B that Core AI iOS covers: DeepSeek-R1 **ANE 83.3** / GPU 75.9 vs MLX 73.0 vs LiteRT 30.7;
@@ -123,25 +123,18 @@ ministral3 arch unsupported) so 3B Core-AI-on-iPhone is **untested, not measured
 iPhone MLX-Swift can't load `ministral3`, and OLMo-2/VibeThinker lack mlx-community repos. (VibeThinker ANE bundle
 pending — its compile was interrupted by a Mac crash; everything else is measured.)
 
-**iPhone 3B int4 is memory-bound — *not* an `externalize_embedder` bug (verified structurally + by controlled
-A/B).** The two 3B builds that externalize the embedding (`externalize_embedder=True`, to stay under the iOS
-~2 GiB single-mmap limit) — **Llama-3.2-3B (1/3) and Ministral-3-3B (0/3)** — fail at cold-launch load (*"embedding
-lookup model is not initialized" / "Failed to create engine"*). We suspected the multi-section embedder path,
-then **isolated it two ways.** (1) *Same code path:* the 1.7B extemb bundle is genuinely multi-section — 2 TFLite
-sections + embedding markers, **structurally identical to the failing Llama-3B bundle** — and it loads **5/5** on
-device (extemb-OFF flaked 1/5). (2) *Mechanism = the iOS ~2 GiB limit:* even after externalizing, the 3B int4
-bundles are **2.2–2.3 GB** (main section still ≈ 2 GB) vs **1.3 GB** for the 1.7B — Llama's main section sits right
-at the boundary (→ intermittent 1/3), Ministral's is over (→ 0/3), the 1.7B is well under (→ 5/5). So the
-externalized-embedding init path works; the failure is the documented size ceiling. **The engine log names it
-directly:** `Failed to map section … Cannot allocate memory` (an `mmap` ENOMEM, graceful exit — no jetsam kill),
-and the *same* Ministral-3B bundle even **loaded on 1 of 3 cold launches** (18.96 tok/s) — a structural/init bug
-could not intermittently succeed. The embedding-section error is a downstream symptom. So it is **not** an
-`externalize_embedder` bug. **It *is* a LiteRT-LM iOS loader limitation, though:** MLX loads the *same*
-Llama-3.2-3B (and SmolLM3-3B) **reliably (3/3) at ~1.9–2.1 GB peak** on this device — the RAM is there — so it's
-LiteRT's **single-section `mmap`** that fails where MLX's non-mmap weight loading succeeds. (LiteRT's own
-SmolLM3-3B, 2.00 GB, loads; Llama/Ministral, 2.2–2.3 GB, don't — the failure tracks largest-section size vs the
-~2 GB mmap ceiling.) A correctly-scoped enhancement (chunked/multiple mmaps, read fallback, or finer
-section-splitting), **distinct from the refuted embedder bug.**
+**iPhone 3B int4 loads fine on LiteRT-LM — the earlier failures were a *harness* misconfiguration (missing memory
+entitlements), not LiteRT.** The BenchmarkApp was built without `com.apple.developer.kernel.increased-memory-limit`
+and `…extended-virtual-addressing`. Without them a large weight-section `mmap` fails with `Cannot allocate memory`
+(ENOMEM) even on this **12 GB** device — we saw **Ministral-3-3B 0–1/3 and Llama-3.2-3B 1/3**. **Adding both
+entitlements fixed it: Ministral-3-3B 3/3 (~18 tok/s), Llama-3.2-3B 5/5 (~18.4).** Both are required —
+`increased-memory-limit` raises the footprint ceiling (the many-small-sections case, Ministral) and
+`extended-virtual-addressing` supplies address space for one large contiguous section (Llama). We chased two wrong
+hypotheses on the way — an `externalize_embedder` bug, then a "LiteRT mmap-loader limitation" — **both refuted.**
+MLX only *appeared* to "load 3B where LiteRT couldn't" because its lower load-peak stayed under the default limit.
+**LiteRT-LM is not at fault for the iPhone 3B failures; it was our app config.** (Lesson: the iPhone harness needs
+both entitlements for any ≳2 GB model — this likely also un-blocks other large iPhone cells previously marked OOM,
+e.g. Phi-4-mini LiteRT, which should be re-checked.)
 
 **Core AI iOS:** measured (ANE + GPU) for the qwen-arch ≤1.7B set — see the iPhone table above (DeepSeek-R1, TinySwallow, Qwen3-1.7B; VibeThinker GPU). Core AI ≥ MLX ≫ LiteRT on-device, ANE the trump card.
 

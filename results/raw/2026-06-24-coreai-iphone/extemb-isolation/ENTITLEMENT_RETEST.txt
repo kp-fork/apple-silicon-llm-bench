@@ -1,0 +1,31 @@
+=== side-load Llama-3B extemb (2.21G) ===
+===== Ministral-3B =====
+  Ministral-3B run1 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=18.16
+  Ministral-3B run2 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=18.15
+  Ministral-3B run3 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=17.84
+===== Llama-3B =====
+  Llama-3B run1 :: <no verdict>
+  Llama-3B run2 :: <no verdict>
+  Llama-3B run3 :: <no verdict>
+RETEST_DONE
+===== Llama-3B (correct id litert-local/llama32-3b) =====
+  Llama-3B run1 :: Cannot allocate memory
+  Llama-3B run2 :: YARDSTICK_RUN_FAIL run=1 error=Model load failed: Failed to create engine.
+  Llama-3B run3 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=18.22
+===== Llama-3B with BOTH entitlements (5x) =====
+  Llama-3B run1 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=18.76
+  Llama-3B run2 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=18.55
+  Llama-3B run3 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=18.50
+  Llama-3B run4 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=18.10
+  Llama-3B run5 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=15.39
+  >>> Llama-3B loaded 5/5 with both entitlements
+
+===== RESOLUTION (root cause confirmed) =====
+ROOT CAUSE: BenchmarkApp lacked memory entitlements. NOT a LiteRT bug.
+  no entitlement: Ministral-3B 0-1/3, Llama-3B 1/3 ("Cannot allocate memory" mmap ENOMEM)
+  + increased-memory-limit:        Ministral-3B 3/3 ; Llama-3B still 1/3
+  + BOTH (incl. extended-virtual-addressing): Ministral-3B 3/3 (~18), Llama-3B 5/5 (~18.4)
+Both needed: increased-memory-limit = footprint ceiling (many-section, Ministral);
+extended-virtual-addressing = address space for one large contiguous section (Llama).
+Two prior hypotheses (externalize_embedder bug; LiteRT mmap-loader limit) BOTH WRONG.
+Device has 12GB; MLX 3B worked only because its load-peak stayed under the default limit.
