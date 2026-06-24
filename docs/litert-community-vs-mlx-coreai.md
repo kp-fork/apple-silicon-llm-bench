@@ -122,22 +122,24 @@ iso-int4 (Qwen3-1.7B 62.8 vs 23.2; Llama-3.2-3B 34.0 vs 19.5; SmolLM3-3B 36.8 vs
 iPhone MLX-Swift can't load `ministral3`, and OLMo-2/VibeThinker lack mlx-community repos. (VibeThinker ANE bundle
 pending — its compile was interrupted by a Mac crash; everything else is measured.)
 
-**🐛 iPhone LiteRT bug — externalized-embedding `.litertlm` are unreliable on the iOS runtime.** The two builds
-that split the embedding into its own section (`externalize_embedder=True`, used to stay under the iOS ~2 GiB
-single-mmap limit) — **Llama-3.2-3B (1/3) and Ministral-3-3B (0/3)** — fail at load with *"Input embeddings
-required by signature but embedding lookup model is not initialized" / "Failed to create engine."* The
-non-externalized int4 builds (OLMo-2-1B, SmolLM3-3B, Qwen3-1.7B) load and run cleanly. **Concrete LiteRT-LM
-iOS runtime bug to report** — the engine doesn't reliably init the secondary embedding-lookup model from a
-multi-section `.litertlm` on device (works on Mac).
+**iPhone 3B int4 is memory-bound — *not* an `externalize_embedder` bug (verified by controlled A/B).** The two
+3B builds that externalize the embedding (`externalize_embedder=True`, to stay under the iOS ~2 GiB single-mmap
+limit) — **Llama-3.2-3B (1/3) and Ministral-3-3B (0/3)** — fail at cold-launch load (*"embedding lookup model is
+not initialized" / "Failed to create engine"*). We initially suspected the multi-section embedder path, then
+**isolated it**: the *same* Qwen3-1.7B + recipe with `externalize_embedder` **ON loads 5/5** on device (extemb
+**OFF** flaked 1/5) — so the multi-section load path is fine. The 3B failures are **memory-bound near the iOS RAM
+ceiling** (gradient: Ministral-3B 0/3 → Llama-3B 1/3 → 1.7B reliable), and the embedding-section error is a
+downstream symptom of the larger bundle not fully mapping under memory pressure. **Not a filable LiteRT bug** —
+an expected 3B-int4-on-device constraint.
 
-**Core AI iOS:** not attempted (separate AOT export + side-load; Qwen3 ANE/GPU already covered in prior repo data).
+**Core AI iOS:** measured (ANE + GPU) for the qwen-arch ≤1.7B set — see the iPhone table above (DeepSeek-R1, TinySwallow, Qwen3-1.7B; VibeThinker GPU). Core AI ≥ MLX ≫ LiteRT on-device, ANE the trump card.
 
 ### Coverage — 40 measured cells; every blank is a documented architectural block
 - **Mac 26/30:** all 10 models have MLX + LiteRT; Core AI 6/10 (qwen2/qwen3/mistral/gemma3). Core AI blocks: no
   wrapper for olmo2/phi3/smollm3-NoPE; Ministral `ministral3` unknown to the installed transformers'
   `Mistral3Config`. (Gemma3-1B was unblocked by the text-only-config fix above.)
 - **iPhone 14/20:** 7 MLX + 7 LiteRT. Blocks: no mlx-community repo for OLMo-2/VibeThinker; MLX-Swift can't
-  load `ministral3`; Gemma3-1B LiteRT gated; Phi LiteRT (4 GB int8) OOM-skipped; Ministral LiteRT extemb-fail.
+  load `ministral3`; Gemma3-1B LiteRT gated; Phi LiteRT (4 GB int8) OOM-skipped; Llama/Ministral 3B LiteRT memory-bound (cold-launch flaky near the iOS ceiling).
 
 ## Coverage — LiteRT *traces*, Core AI *reimplements* (out-of-the-box ease vs custom-code ceiling)
 

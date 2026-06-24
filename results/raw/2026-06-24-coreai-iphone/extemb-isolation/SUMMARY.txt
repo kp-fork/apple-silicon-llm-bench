@@ -1,0 +1,15 @@
+===== variant=OFF  (push 1599902912 bytes) =====
+  on-device: model.litertlm   Writable, Readable   1.49 GB   2026/06/24, 15:40
+  OFF run1 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=24.84
+  OFF run2 :: Failed to create engine
+  OFF run3 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=25.08
+  OFF run4 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=24.39
+  OFF run5 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=24.41
+===== variant=ON  (push 1289483184 bytes) =====
+  on-device: model.litertlm   Writable, Readable   1.2 GB   2026/06/24, 15:40
+  ON run1 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=24.49
+  ON run2 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=25.05
+  ON run3 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=24.80
+  ON run4 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=23.55
+  ON run5 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=18.10
+AB_DONE
