@@ -1,0 +1,11 @@
+Phi model size: 3.6G
+=== side-load Phi-4-mini int8 (reusing qwen3-1.7b id dir) ===
+  Phi-4-mini run1 :: <no verdict>
+  Phi-4-mini run2 :: YARDSTICK_RUN_FAIL run=1 error=Model load failed: Failed to create engine. 
+  Phi-4-mini run3 :: YARDSTICK_RUN_FAIL run=1 error=Model load failed: Failed to create engine. 
+PHI_REBENCH_DONE
+
+RESULT: Phi-4-mini int8 (3.6GB) GENUINELY OOMs even WITH both entitlements.
+  run1: std::bad_alloc -> signal 6 (SIGABRT). run2/3: Failed to create engine / Failed to initialize kernel.
+  => REAL memory limit (3.6GB int8 too big for iPhone even with raised limit), NOT a harness artifact.
+  Clean split vs the 3B int4 cells (2.2GB, which WERE artifacts and now load). "OOM" label was correct.
