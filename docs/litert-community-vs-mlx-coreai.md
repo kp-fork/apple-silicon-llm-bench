@@ -131,8 +131,11 @@ sections + embedding markers, **structurally identical to the failing Llama-3B b
 device (extemb-OFF flaked 1/5). (2) *Mechanism = the iOS ~2 GiB limit:* even after externalizing, the 3B int4
 bundles are **2.2–2.3 GB** (main section still ≈ 2 GB) vs **1.3 GB** for the 1.7B — Llama's main section sits right
 at the boundary (→ intermittent 1/3), Ministral's is over (→ 0/3), the 1.7B is well under (→ 5/5). So the
-externalized-embedding init path works; the failure is the documented size ceiling and the embedding-section
-error is a downstream symptom. **Not a filable LiteRT bug** — an expected 3B-int4-on-device constraint.
+externalized-embedding init path works; the failure is the documented size ceiling. **The engine log names it
+directly:** `Failed to map section … Cannot allocate memory` (an `mmap` ENOMEM, graceful exit — no jetsam kill),
+and the *same* Ministral-3B bundle even **loaded on 1 of 3 cold launches** (18.96 tok/s) — a structural/init bug
+could not intermittently succeed. The embedding-section error is a downstream symptom. **Not a filable LiteRT
+bug** — an expected 3B-int4-on-device memory constraint.
 
 **Core AI iOS:** measured (ANE + GPU) for the qwen-arch ≤1.7B set — see the iPhone table above (DeepSeek-R1, TinySwallow, Qwen3-1.7B; VibeThinker GPU). Core AI ≥ MLX ≫ LiteRT on-device, ANE the trump card.
 

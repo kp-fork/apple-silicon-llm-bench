@@ -24,3 +24,13 @@ Llama-3B (2 TFL3 sections + emb markers) and loaded 5/5. The 3B bundles are 2.2-
 (main section ~2GB) even after externalizing -> the iOS ~2GiB single-mmap ceiling, not a
 multi-section init bug. Size gradient explains the failure rate: Ministral 2.34G=0/3,
 Llama 2.21G=1/3 (right at boundary), 1.7B 1.3G=5/5.
+
+===== DEVICE MEMORY EVIDENCE (Ministral-3B extemb, full console, 3 cold launches) =====
+run1 FAIL: litert_lm_loader.cc:297 "Failed to map section: ... memory_mapped_file_posix.cc:115
+           ... Failed to map, error: Cannot allocate memory" -> TF_LITE_EMBEDDER skipped ->
+           "embedding lookup model is not initialized". Exit 0, NO jetsam/signal.
+run2 FAIL: "Failed to create engine" (mmap failed at another point).
+run3 OK  : loaded, decode 18.96 tok/s.
+=> SAME 3B bundle is intermittent (1/3 success) and the engine literally reports
+   "Cannot allocate memory" on mmap. A structural/init bug cannot intermittently succeed.
+   DEFINITIVE: memory-bound (mmap ENOMEM), not an externalize_embedder/multi-section bug.
