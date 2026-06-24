@@ -122,15 +122,17 @@ iso-int4 (Qwen3-1.7B 62.8 vs 23.2; Llama-3.2-3B 34.0 vs 19.5; SmolLM3-3B 36.8 vs
 iPhone MLX-Swift can't load `ministral3`, and OLMo-2/VibeThinker lack mlx-community repos. (VibeThinker ANE bundle
 pending — its compile was interrupted by a Mac crash; everything else is measured.)
 
-**iPhone 3B int4 is memory-bound — *not* an `externalize_embedder` bug (verified by controlled A/B).** The two
-3B builds that externalize the embedding (`externalize_embedder=True`, to stay under the iOS ~2 GiB single-mmap
-limit) — **Llama-3.2-3B (1/3) and Ministral-3-3B (0/3)** — fail at cold-launch load (*"embedding lookup model is
-not initialized" / "Failed to create engine"*). We initially suspected the multi-section embedder path, then
-**isolated it**: the *same* Qwen3-1.7B + recipe with `externalize_embedder` **ON loads 5/5** on device (extemb
-**OFF** flaked 1/5) — so the multi-section load path is fine. The 3B failures are **memory-bound near the iOS RAM
-ceiling** (gradient: Ministral-3B 0/3 → Llama-3B 1/3 → 1.7B reliable), and the embedding-section error is a
-downstream symptom of the larger bundle not fully mapping under memory pressure. **Not a filable LiteRT bug** —
-an expected 3B-int4-on-device constraint.
+**iPhone 3B int4 is memory-bound — *not* an `externalize_embedder` bug (verified structurally + by controlled
+A/B).** The two 3B builds that externalize the embedding (`externalize_embedder=True`, to stay under the iOS
+~2 GiB single-mmap limit) — **Llama-3.2-3B (1/3) and Ministral-3-3B (0/3)** — fail at cold-launch load (*"embedding
+lookup model is not initialized" / "Failed to create engine"*). We suspected the multi-section embedder path,
+then **isolated it two ways.** (1) *Same code path:* the 1.7B extemb bundle is genuinely multi-section — 2 TFLite
+sections + embedding markers, **structurally identical to the failing Llama-3B bundle** — and it loads **5/5** on
+device (extemb-OFF flaked 1/5). (2) *Mechanism = the iOS ~2 GiB limit:* even after externalizing, the 3B int4
+bundles are **2.2–2.3 GB** (main section still ≈ 2 GB) vs **1.3 GB** for the 1.7B — Llama's main section sits right
+at the boundary (→ intermittent 1/3), Ministral's is over (→ 0/3), the 1.7B is well under (→ 5/5). So the
+externalized-embedding init path works; the failure is the documented size ceiling and the embedding-section
+error is a downstream symptom. **Not a filable LiteRT bug** — an expected 3B-int4-on-device constraint.
 
 **Core AI iOS:** measured (ANE + GPU) for the qwen-arch ≤1.7B set — see the iPhone table above (DeepSeek-R1, TinySwallow, Qwen3-1.7B; VibeThinker GPU). Core AI ≥ MLX ≫ LiteRT on-device, ANE the trump card.
 

@@ -13,3 +13,14 @@
   ON run4 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=23.55
   ON run5 :: YARDSTICK_RUN_OK run=1 cold=1 decode_tok_s=18.10
 AB_DONE
+
+===== STRUCTURAL VERIFICATION (TFLite section count in each .litertlm) =====
+1.7B extemb-ON  : TFL3_sections=2  emb_markers=9  size=1.29G   <- genuinely multi-section
+1.7B extemb-OFF : TFL3_sections=1  emb_markers=0  size=1.60G
+Llama-3B extemb : TFL3_sections=2  emb_markers=9  size=2.21G   <- SAME structure as 1.7B-ON, but >2GB
+Ministral-3B extemb: TFL3_sections=3 emb_markers=9 size=2.34G  <- >2GB
+CONCLUSION: 1.7B-ON exercised the identical externalized-embedding path as the failing
+Llama-3B (2 TFL3 sections + emb markers) and loaded 5/5. The 3B bundles are 2.2-2.3GB
+(main section ~2GB) even after externalizing -> the iOS ~2GiB single-mmap ceiling, not a
+multi-section init bug. Size gradient explains the failure rate: Ministral 2.34G=0/3,
+Llama 2.21G=1/3 (right at boundary), 1.7B 1.3G=5/5.
