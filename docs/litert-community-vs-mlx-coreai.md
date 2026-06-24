@@ -102,7 +102,7 @@ qwen2 / qwen3 / gemma3 / mistral wrappers. `†` Gemma3-1B Core AI via a local t
 |---|--:|--:|--:|--:|
 | DeepSeek-R1-1.5B | **83.3** | **75.9** | **73.0** | **30.7** |
 | TinySwallow-1.5B | **74.8** | **75.0** | **71.6** | **30.6** |
-| VibeThinker-1.5B | ⏳ | **75.7** | — | **30.4** |
+| VibeThinker-1.5B | **71.5** | **75.7** | — | **30.4** |
 | Qwen3-1.7B | **64.8** | **67.6** | **62.8** | **23.2** |
 | Gemma3-1B | ✗ no iOS class | — | **97.6** | gated |
 | Phi-4-mini | ✗ no wrapper | — | **29.6** | OOM |
@@ -121,7 +121,7 @@ iso-int4 (Qwen3-1.7B 62.8 vs 23.2; Llama-3.2-3B 34.0 vs 19.5; SmolLM3-3B 36.8 vs
 = qwen2/qwen3/mistral classes only; **3B iOS Core AI bundles were not built** (no llama/smollm3 iOS class,
 ministral3 arch unsupported) so 3B Core-AI-on-iPhone is **untested, not measured-OOM**; gemma3 no iOS class, phi3/olmo2/smollm3 no wrapper;
 iPhone MLX-Swift can't load `ministral3`, and OLMo-2/VibeThinker lack mlx-community repos. (VibeThinker ANE bundle
-pending — its compile was interrupted by a Mac crash; everything else is measured.)
+re-assembled and measured: **71.5 tok/s** — everything is now measured.)
 
 **iPhone 3B int4 loads fine on LiteRT-LM — the earlier failures were a *harness* misconfiguration (missing memory
 entitlements), not LiteRT.** The BenchmarkApp was built without `com.apple.developer.kernel.increased-memory-limit`
