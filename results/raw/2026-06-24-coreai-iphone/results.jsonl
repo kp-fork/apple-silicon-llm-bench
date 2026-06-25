@@ -6,3 +6,12 @@
 {"model":"DeepSeek-R1-Distill-Qwen-1.5B","framework":"coreai","device":"iphone17pro","backend":"ane","decode_tps":83.3,"ttft_ms":55,"peak_mb":1399,"runs_ok":"3/3"}
 {"model":"DeepSeek-R1-Distill-Qwen-1.5B","framework":"coreai","device":"iphone17pro","backend":"gpu","decode_tps":75.9,"ttft_ms":23,"peak_mb":237,"runs_ok":"3/3"}
 {"model":"VibeThinker-1.5B","framework":"coreai","device":"iphone17pro","backend":"ane","decode_tps":71.5,"runs_ok":"3/3"}
+{"model":"Gemma3-1B","framework":"coreai","device":"iphone17pro","backend":"gpu","decode_tps":103.6,"ttft_ms":166,"peak_mb":381,"runs_ok":"3/3"}
+{"model":"OLMo-2-1B","framework":"coreai","device":"iphone17pro","backend":"gpu","decode_tps":86.1,"ttft_ms":25,"peak_mb":229,"runs_ok":"3/3"}
+{"model":"OLMo-2-1B","framework":"coreai","device":"iphone17pro","backend":"ane","decode_tps":95.6,"ttft_ms":48,"peak_mb":1609,"runs_ok":"3/3"}
+{"model":"Llama-3.2-3B","framework":"coreai","device":"iphone17pro","backend":"gpu","decode_tps":19.3,"ttft_ms":65,"peak_mb":295,"runs_ok":"3/3"}
+{"model":"Llama-3.2-3B","framework":"coreai","device":"iphone17pro","backend":"ane","decode_tps":24.2,"ttft_ms":241,"peak_mb":2612,"runs_ok":"3/3"}
+{"model":"SmolLM3-3B","framework":"coreai","device":"iphone17pro","backend":"gpu","decode_tps":20.5,"ttft_ms":302,"peak_mb":371,"runs_ok":"3/3"}
+{"model":"SmolLM3-3B","framework":"coreai","device":"iphone17pro","backend":"ane","decode_tps":23.0,"ttft_ms":431,"peak_mb":2277,"runs_ok":"3/3"}
+{"model":"Ministral-3-3B","framework":"coreai","device":"iphone17pro","backend":"gpu","decode_tps":17.6,"ttft_ms":744,"peak_mb":1459,"runs_ok":"3/3"}
+{"model":"Phi-4-mini","framework":"coreai","device":"iphone17pro","backend":"gpu","decode_tps":null,"note":"crash 0/3 — Array index out of range (partial_rotary_factor 0.75; same wall as Mac/ANE)","runs_ok":"0/3"}

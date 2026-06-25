@@ -43,16 +43,16 @@ and is being standardized to one shared prompt. The iPhone table is fully iso.
 |---|---|--:|--:|--:|
 | **— litert-community —** | | | | |
 | DeepSeek-R1-Distill-Qwen-1.5B | int8* | **319.5** | **323.6** | **115.9*** |
-| Phi-4-mini-instruct | int8* | — (no wrapper) | **167.4** | **67.7*** |
+| Phi-4-mini-instruct | int8* | ✗ partial-RoPE¶ | **167.4** | **67.7*** |
 | Gemma3-1B-IT | int4 | **327.2**† | **345.5** | **185.7**‡ |
 | TinySwallow-1.5B | int8* | **324.1** | **326.7** | **119.6*** |
 | VibeThinker-1.5B | int8* | **322.7** | **176.3**§ | **119.6*** |
 | **— our official-converter (all int4 BOCTAV4) —** | | | | |
-| OLMo-2-1B | int4 | — (no wrapper) | **413.3** | **140.2** |
+| OLMo-2-1B | int4 | **384.4** | **413.3** | **140.2** |
 | Qwen3-1.7B | int4 | **239.1** | **322.7** | **115.8** |
 | Llama-3.2-3B | int4 | **198.3** | **208.0** | **94.0** |
-| SmolLM3-3B | int4 | — (no wrapper) | **196.0** | **91.2** |
-| Ministral-3-3B | int4 | ✗ transformers | **189.0** | **92.8** |
+| SmolLM3-3B | int4 | **192.9** | **196.0** | **91.2** |
+| Ministral-3-3B | int4 | **186.0** | **189.0** | **92.8** |
 
 § VibeThinker MLX decodes ~1.8× slower than the other 1.5B Qwen-family models (176 vs ~320) despite the same
 param count — likely a wider intermediate/vocab in its config; flagged for a re-check.
@@ -64,16 +64,21 @@ larger generic int4 builds (OLMo-2-1B 140, Qwen3-1.7B 116, Llama-3.2-3B 94), a d
 `litert-speed-findings.md`. The MLX gap is correspondingly smaller here (345 / 186 = 1.86×).
 
 `*` int8 = the only quant litert-community publishes for that model; not iso-bit vs the int4 MLX/Core AI cells.
-`— (no wrapper)` = no Core AI macOS wrapper for that arch (olmo2 / phi3 / smollm3-NoPE); the others map to
-qwen2 / qwen3 / gemma3 / mistral wrappers. `†` Gemma3-1B Core AI via a local text-only-config fix to
-`coreai-models/export/pipeline.py` (the gemma3 wrapper otherwise assumes the multimodal config).
+`†` Gemma3-1B Core AI via a local text-only-config fix to `coreai-models/export/pipeline.py` (the gemma3 wrapper
+otherwise assumes the multimodal config). The **2026-06-25 export pass** added macOS classes for **olmo2 / smollm3 /
+ministral3** (now benched — 384.4 / 192.9 / 186.0) → **Mac Core AI is now 9/10**. `¶` **partial-RoPE** = Phi-4-mini's
+`partial_rotary_factor` 0.75 rotates 48 of 64 head-dims; the export passes HF parity but both the Mac `llm-benchmark`
+harness (`RoPE freqs [48] ≠ half_embed [64]`) and the iOS pipeline (`Array index out of range`) assume full rotary —
+the lone remaining Mac block, and a hard wall on iPhone **GPU + ANE**. `△` Gemma3-1B ANE = dual local/global RoPE +
+sliding/full attention not expressible on the single-mask / single-RoPE iOS pipeline (GPU fine). `◇` Ministral-3-3B ANE
+= needs the multimodal-FP8 `Mistral3ForConditionalGeneration` loader (GPU ships via the macOS-shim path).
 
 ## Prefill tok/s (Mac M4 Max GPU)
 | Model | Core AI | MLX† | LiteRT-LM |
 |---|--:|--:|--:|
 | DeepSeek-R1-1.5B | **4210** | 168† | 486 |
 | Qwen3-1.7B | **3640** | 1004† | 396 |
-| OLMo-2-1B | — | 1491† | 672 |
+| OLMo-2-1B | **4975** | 1491† | 672 |
 
 † MLX/LiteRT prefill use short prompts (not the 512-tok synthetic prompt Core AI uses), so compare prefill
 *within* a runtime / directionally only. Core AI's prefill lead is real and large regardless.
@@ -84,7 +89,7 @@ qwen2 / qwen3 / gemma3 / mistral wrappers. `†` Gemma3-1B Core AI via a local t
 
 1. **On Apple GPU, Core AI ≈ MLX, both clearly ahead of LiteRT-LM on decode** — the same conclusion as the
    Falcon3 study, now reproduced across more architectures. For the iso-bit int4 rows: Qwen3-1.7B = Core AI
-   239 / MLX 323 / LiteRT 116; OLMo-2-1B = MLX 413 / LiteRT 140. LiteRT-LM lands at **~35–50 % of MLX**
+   239 / MLX 323 / LiteRT 116; OLMo-2-1B = Core AI 384 / MLX 413 / LiteRT 140. LiteRT-LM lands at **~35–50 % of MLX**
    decode at the same int4 weight size.
 2. **The int8-only community models look even slower — but that's a publishing choice, not a runtime defect.**
    DeepSeek-R1 and Phi-4-mini are only on litert-community as **q8/int8** — at int8 they read 2× the bytes, so
@@ -95,17 +100,15 @@ qwen2 / qwen3 / gemma3 / mistral wrappers. `†` Gemma3-1B Core AI via a local t
 4. **Root cause is unchanged from `litert-speed-findings.md`:** LiteRT-LM runs int4×int8 **INTEGER** matmul over
    the **WebGPU(Dawn)→Metal** delegate; MLX/Core AI dequantize int4→fp16 and run **native-Metal fp16 GEMM**,
    which Apple GPUs do extremely fast. The decode gap is kernel/delegate efficiency, not bit-width.
-5. **Core AI arch coverage is the practical limiter for that column** — qwen2/qwen3/mistral wrappers cover
-   DeepSeek-R1 (319.5), TinySwallow (324.1), VibeThinker (322.7), Qwen3-1.7B (239.1) cleanly; olmo2, phi3,
-   and smollm3's NoPE have no wrapper (Core AI N/A for those three). **Gemma3-1B Core AI needed a wrapper fix** (now
-   resolved, 327.2): the `coreai-models` gemma3 wrapper assumed the *multimodal* Gemma-3 config (`text_config`
-   sub-config + `language_model.` weight prefix) and `AttributeError`'d on the text-only 1B; patched to fall
-   back to the top-level config / empty prefix for text-only Gemma3 (`export/pipeline.py`) → a small
-   upstreamable fix. The remaining four (olmo2, phi3, smollm3-NoPE — no
-   export class yet; `ministral3` — also needs a transformers that knows the arch) are **not permanent gaps —
-   they just need a per-arch export class, which is quick for a `coreai-models` maintainer** (the zoo already has
-   20+ families incl. MoE/diffusion/vision/audio). We benched the 6 that have an existing class; the other 4 are
-   "unwritten class," not "unsupported."
+5. **Core AI arch coverage was the practical limiter — the 2026-06-25 export pass closed most of it, validating the
+   "just needs a per-arch class" thesis.** qwen2/qwen3/mistral wrappers cleanly cover DeepSeek-R1 (319.5), TinySwallow
+   (324.1), VibeThinker (322.7), Qwen3-1.7B (239.1); Gemma3-1B needed only a text-only-config fix to the existing gemma3
+   wrapper (now 327.2 — it had assumed the multimodal `text_config` / `language_model.` layout and `AttributeError`'d on
+   the text-only 1B). The pass then **wrote the missing macOS classes for olmo2 / smollm3 / ministral3** — all bench
+   cleanly (**384.4 / 192.9 / 186.0**), exactly as predicted ("unwritten class, not unsupported"). **Mac Core AI is now
+   9/10.** The lone block is **Phi-4-mini partial rotary** (`partial_rotary_factor` 0.75): its class exports and passes
+   HF parity, but `llm-benchmark`'s RoPE assumes full rotary and aborts (`RoPE freqs [48] ≠ half_embed [64]`) — a
+   harness/exporter limitation on partial-rotary, not an arch Core AI "can't do" (the same wall recurs on iPhone GPU+ANE).
 6. **The 1.5B Qwen-family models all decode at ~320 tok/s on both Core AI and MLX** (DeepSeek 319.5/323.6,
    TinySwallow 324.1/326.7, VibeThinker 322.7/—) — same architecture, same Apple-GPU ceiling; Core AI and MLX
    are statistically tied, LiteRT-LM's published int8 builds sit at ~half that (bandwidth, not runtime).
@@ -118,24 +121,34 @@ qwen2 / qwen3 / gemma3 / mistral wrappers. `†` Gemma3-1B Core AI via a local t
 | TinySwallow-1.5B | **74.8** | **75.0** | **71.6** | **30.6** |
 | VibeThinker-1.5B | **71.5** | **75.7** | — | **30.4** |
 | Qwen3-1.7B | **64.8** | **67.6** | **62.8** | **23.2** |
-| Gemma3-1B | ✗ no iOS class | — | **97.6** | gated |
-| Phi-4-mini | ✗ no wrapper | — | **29.6** | OOM |
-| OLMo-2-1B | ✗ no wrapper | — | — | **24.6** |
-| Llama-3.2-3B | ✗ no iOS class | — | **34.0** | **18.4** |
-| SmolLM3-3B | ✗ no wrapper | — | **36.8** | **22.8** |
-| Ministral-3-3B | ✗ arch | — | ✗ | **18.0** |
+| Gemma3-1B | ✗ dual-RoPE△ | **103.6** | **97.6** | gated |
+| Phi-4-mini | ✗ partial-RoPE¶ | ✗ partial-RoPE¶ | **29.6** | OOM |
+| OLMo-2-1B | **95.6** | **86.1** | — | **24.6** |
+| Llama-3.2-3B | **24.2** | **19.3** | **34.0** | **18.4** |
+| SmolLM3-3B | **23.0** | **20.5** | **36.8** | **22.8** |
+| Ministral-3-3B | ✗ multimodal-fp8◇ | **17.6** | ✗ | **18.0** |
 
-**On-device, Core AI ≥ MLX ≫ LiteRT-LM — and Core AI's ANE is the trump card MLX/LiteRT structurally can't use.**
-For the qwen-arch ≤1.7B that Core AI iOS covers: DeepSeek-R1 **ANE 83.3** / GPU 75.9 vs MLX 73.0 vs LiteRT 30.7;
-TinySwallow 74.8 / 75.0 vs 71.6 vs 30.6; Qwen3-1.7B 64.8 / 67.6 vs 62.8 vs 23.2. **Core AI ≈-or-beats MLX (the
-ANE tops MLX on DeepSeek-R1, 83 vs 73), and both are ~2.5× LiteRT-LM.** The **ANE (Apple Neural Engine) is
-reachable only via Core AI / CoreML** — MLX and LiteRT-LM are GPU-only on Apple — so it's also the most
-power-efficient path; this is Core AI's real on-device edge, invisible on Mac. The MLX-vs-LiteRT gap is 1.6–2.7×
-iso-int4 (Qwen3-1.7B 62.8 vs 23.2; Llama-3.2-3B 34.0 vs 19.5; SmolLM3-3B 36.8 vs 22.8). Core AI iOS coverage here
-= qwen2/qwen3/mistral classes only; **3B iOS Core AI bundles were not built** (no llama/smollm3 iOS class,
-ministral3 arch unsupported) so 3B Core-AI-on-iPhone is **untested, not measured-OOM**; gemma3 no iOS class, phi3/olmo2/smollm3 no wrapper;
-iPhone MLX-Swift can't load `ministral3`, and OLMo-2/VibeThinker lack mlx-community repos. (VibeThinker ANE bundle
-re-assembled and measured: **71.5 tok/s** — everything is now measured.)
+**On-device the result is size- and arch-dependent — but Core AI's ANE remains the trump card MLX/LiteRT structurally can't
+use.** For the qwen-arch ≤1.7B Core AI iOS covers, Core AI leads: DeepSeek-R1 **ANE 83.3** / GPU 75.9 vs MLX 73.0 vs
+LiteRT 30.7; TinySwallow 74.8 / 75.0 vs 71.6 vs 30.6; Qwen3-1.7B 64.8 / 67.6 vs 62.8 vs 23.2 — **Core AI ≈-or-beats MLX
+(ANE tops MLX on DeepSeek-R1, 83 vs 73), both ~2.5× LiteRT-LM.** The **2026-06-25 export pass added six more models on
+iPhone**, and the outcome **splits by size**: at **1B** Core AI stays ahead — **Gemma3-1B GPU 103.6 > MLX 97.6**, and
+**OLMo-2-1B ANE 95.6 / GPU 86.1 ≈ 4× LiteRT 24.6** (no MLX repo). At **3B, MLX pulls ahead of Core AI**: Llama-3.2-3B
+MLX 34.0 vs Core AI ANE 24.2 / GPU 19.3 (≈ LiteRT 18.4); SmolLM3-3B MLX 36.8 vs Core AI ANE 23.0 / GPU 20.5 (≈ LiteRT
+22.8); Ministral-3-3B Core AI GPU 17.6 ≈ LiteRT 18.0 (MLX can't load it). **Two constants hold at every size:** (1)
+**within Core AI the ANE always beats its own GPU** (OLMo-2 95.6 > 86.1, Llama 24.2 > 19.3, SmolLM3 23.0 > 20.5) — and the
+**ANE is reachable only via Core AI / CoreML** (MLX and LiteRT-LM are GPU-only on Apple), so it is also the most
+power-efficient path, Core AI's real on-device edge that's invisible on Mac; (2) **both Core AI paths stay ≥ LiteRT-LM.**
+So the honest on-device summary is **Core AI ≥ MLX ≫ LiteRT for ≤1.7B-qwen and 1B; MLX > Core AI ANE > GPU ≈ LiteRT at 3B**
+— MLX's mature Metal decode kernels win the bandwidth-bound 3B regime, while Core AI owns the ANE and the smaller models.
+
+**Three iPhone Core AI cells are confirmed architectural walls, not pending work** (legitimate Core AI iOS-pipeline coverage
+findings): **Phi-4-mini partial rotary** (`partial_rotary_factor` 0.75) crashes **both GPU and ANE** with `Array index out of
+range` — the same root cause as the Mac `llm-benchmark` `RoPE freqs [48] ≠ half_embed [64]` failure; the standard pipeline
+assumes full rotary. **Gemma3-1B ANE** can't express alternating sliding/full attention + dual local/global RoPE on the
+single-mask/single-RoPE iOS pipeline (GPU is fine — 103.6). **Ministral-3-3B ANE** needs the multimodal-FP8
+`Mistral3ForConditionalGeneration` loader (GPU ships via the macOS-shim path — 17.6). (Earlier-session note: the VibeThinker
+ANE bundle was re-assembled and measured at **71.5 tok/s**; `ministral3`/OLMo-2/VibeThinker have no mlx-community iPhone repo.)
 
 **iPhone 3B int4 loads fine on LiteRT-LM — the earlier failures were a *harness* misconfiguration (missing memory
 entitlements), not LiteRT.** The BenchmarkApp was built without `com.apple.developer.kernel.increased-memory-limit`
@@ -153,30 +166,39 @@ at int4 (~2 GB, 29.6 tok/s) and LiteRT runs other 3B int4 builds (~2.2 GB) fine,
 load too — litert-community just only ships Phi as int8. So the iPhone "OOM" cells split: **3B int4 = harness
 artifacts (now load); Phi int8 = too big at *that quant* (int4 would fit); genuinely-unrunnable on-device = none.**)
 
-**Core AI iOS:** measured (ANE + GPU) for the qwen-arch ≤1.7B set — see the iPhone table above (DeepSeek-R1, TinySwallow, Qwen3-1.7B; VibeThinker GPU). Core AI ≥ MLX ≫ LiteRT on-device, ANE the trump card.
+**Core AI iOS:** now measured for **16/20** cells — the qwen-arch ≤1.7B set (DeepSeek-R1, TinySwallow, VibeThinker,
+Qwen3-1.7B) **plus the 2026-06-25 export pass** (Gemma3-1B GPU; OLMo-2-1B, Llama-3.2-3B, SmolLM3-3B both ANE+GPU;
+Ministral-3-3B GPU). Core AI ≥ MLX ≫ LiteRT at ≤1.7B-qwen and 1B; **MLX leads at 3B**; **ANE > Core AI's own GPU throughout**.
 
-### Coverage — 40 measured cells; every blank is a documented architectural block
-- **Mac 26/30:** all 10 models have MLX + LiteRT; Core AI 6/10 (qwen2/qwen3/mistral/gemma3). Core AI blocks: no
-  wrapper for olmo2/phi3/smollm3-NoPE; Ministral `ministral3` unknown to the installed transformers'
-  `Mistral3Config`. (Gemma3-1B was unblocked by the text-only-config fix above.)
-- **iPhone 14/20:** 7 MLX + 7 LiteRT. Blocks: no mlx-community repo for OLMo-2/VibeThinker; MLX-Swift can't
-  load `ministral3`; Gemma3-1B LiteRT gated; Phi LiteRT (4 GB int8) OOM-skipped; Llama/Ministral 3B LiteRT memory-bound (cold-launch flaky near the iOS ceiling).
+### Coverage — 60 measured cells; every blank is a documented architectural block
+- **Mac 29/30:** all 10 models have MLX + LiteRT; **Core AI 9/10** (qwen2/qwen3/mistral/gemma3 + the new
+  olmo2/smollm3/ministral3 classes — 384.4/192.9/186.0). The only Core AI block is **Phi-4-mini partial-RoPE** (exports
+  + passes parity, but `llm-benchmark`'s full-rotary RoPE aborts).
+- **iPhone 31/40:** Core AI **16/20** (7 ANE + 9 GPU), MLX 7/10, LiteRT 8/10. Blocks: **Core AI ANE ×3** — Gemma3-1B
+  (dual-RoPE/sliding), Phi-4-mini (partial-RoPE), Ministral-3-3B (multimodal-fp8 loader) — **plus Phi GPU** (partial-RoPE,
+  the one GPU block); **MLX ×3** — no mlx-community repo for OLMo-2/VibeThinker, MLX-Swift can't load `ministral3`;
+  **LiteRT ×2** — Gemma3-1B gated, Phi int8 (3.6 GB) OOM. (Llama/Ministral 3B LiteRT now load with the memory entitlements.)
 
 ## Coverage — LiteRT *traces*, Core AI *reimplements* (out-of-the-box ease vs custom-code ceiling)
 
-Every model here converted to LiteRT with **zero custom code**, yet Core AI covers only 6/10 — a direct
-consequence of the two converters' designs, not a quality gap. **LiteRT-LM (`litert_torch`) is trace-based and
+Every model here converted to LiteRT with **zero custom code**; Core AI instead needs a hand-written class per
+architecture — so before the 2026-06-25 export pass it covered only 6/10, **now 9/10 on Mac** once three more classes
+were written. This is a direct consequence of the two converters' designs, not a quality gap. **LiteRT-LM (`litert_torch`) is trace-based and
 architecture-agnostic:** `torch.export` captures the HF model's *actual* forward and lowers it to generic ops
 (matmul, RMSNorm, real-valued RoPE, softmax-SDPA). It never needs to "know" the architecture — OLMo-2's
 QK-norm, SmolLM3's NoPE, Ministral's layout are just *different arrangements of the same generic ops*, so any
 traceable model with supported ops works. **Core AI (`coreai-models`) is a per-architecture reimplementation
 registry:** hand-written Apple `nn.Module` classes (`macos/{qwen2,qwen3,mistral,gemma3_text,…}.py`) built from
 Apple primitives (SDPA/RoPE/RMSNorm) into which HF weights are *loaded* (`_mutate_state_dict` even re-combines
-QKV). An architecture with no hand-written class can't export — which is why olmo2/phi3/smollm3 fail (and can't
-borrow the `mistral` wrapper: they'd *run* but compute the wrong thing — skipping QK-norm, applying RoPE to NoPE
-layers), and Ministral-3 fails twice over (its multimodal `Mistral3Config` / `ministral3` text sub-arch isn't
-even recognized by the installed transformers, *before* Core AI is reached). Gemma3-1B was the lone quick fix
-because gemma3 *is* in the registry — only its config-layout assumption needed relaxing.
+QKV). An architecture with no hand-written class can't export — which is why olmo2/smollm3/ministral3 originally had
+none (and can't borrow the `mistral` wrapper: they'd *run* but compute the wrong thing — skipping QK-norm, applying
+RoPE to NoPE layers). **The export pass wrote those classes and they work** (Mac 384.4/192.9/186.0; iPhone too),
+confirming the gap was "unwritten class," not "unsupported." Two residual walls are deeper than a missing class:
+**Phi-4-mini partial rotary** (the class exists and passes HF parity, but the standard full-rotary RoPE path aborts
+on both Mac `llm-benchmark` and the iOS pipeline), and the **Gemma3-1B / Ministral-3-3B ANE** cells (the iOS ANE
+pipeline can't express Gemma3's dual-RoPE + sliding/full attention, and Ministral needs the multimodal-FP8 loader —
+both run fine on the GPU path). Gemma3-1B was the early quick fix because gemma3 *was* already in the registry —
+only its config-layout assumption needed relaxing.
 
 Core AI reimplements (rather than traces) to emit a **stateful (KV-cache-as-state), Apple-tuned, memory-mapped
 graph** — what makes it fast (320 tok/s, 4 k prefill). **The nuance that matters (and corrects an easy
@@ -189,8 +211,9 @@ is closed** (ML Drift is prebuilt; no external kernel-registration path). So Lit
 **zero-friction dense conversion + portability / cross-hardware reach**, *not* raw breadth — and the high-leverage
 asks are to **raise the ceiling: (a) converter fixes for the new archs, (b) open the GPU kernel layer so
 contributors can extend it the way they extend Core AI** — alongside closing the dense-path Apple-GPU speed gap
-(below). (Of the 10 here — all dense — LiteRT converts 10/10 with no custom code vs Core AI's 6/10; that's the
-*ease-for-dense* point, not an overall-coverage win.)
+(below). (Of the 10 here — all dense — LiteRT converts 10/10 with **zero per-model code**; Core AI needs a hand-written
+class per arch but, once written, also runs **9/10** on Mac. The *ease-for-dense* point is the **marginal cost of a new
+architecture** — zero for LiteRT vs a class for Core AI — not a permanent coverage ceiling, as the 2026-06-25 pass showed.)
 
 ## Recommendations to the LiteRT-LM team (impact-ordered)
 1. **Make weight-only int4 + FLOAT compute (int4→fp16 dequant + fp16 GEMM) actually execute** — today it

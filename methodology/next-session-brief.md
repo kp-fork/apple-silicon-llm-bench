@@ -1,5 +1,21 @@
 # NEXT-SESSION BRIEF — start here (written 2026-06-24)
 
+> **2026-06-25 UPDATE — Core AI matrix CLOSED (both streams done).** Mac Core AI **9/10** (added OLMo-2 384.4 /
+> SmolLM3 192.9 / Ministral-3 186.0; only Phi partial-RoPE blocked). iPhone Core AI **16/20** measured — 6 new models:
+> Gemma3-1B GPU 103.6, OLMo-2 ANE 95.6 / GPU 86.1, Llama-3.2-3B ANE 24.2 / GPU 19.3, SmolLM3 ANE 23.0 / GPU 20.5,
+> Ministral-3B GPU 17.6. **New findings (corrected the brief):** (1) **Phi partial-RoPE is a wall on Mac *and* iPhone,
+> GPU *and* ANE** (`Array index out of range` / `RoPE freqs [48]≠[64]`) — not just iPhone-ANE; (2) **at 3B on iPhone MLX
+> beats Core AI** (Llama/SmolLM3); Core AI wins ≤1.7B-qwen + 1B; (3) **ANE > Core AI's own GPU throughout.** Report (both
+> copies) + raw JSONL updated & committed.
+>
+> **⚠ BUILD-SIGNING GOTCHA (new, saves a session):** the canonical App ID `com.iosllmbenchmark.benchmarkapp` is
+> "not available" to re-register (taken by another team) → automatic signing can't mint a capabilities profile, and
+> the GUI hits the same wall. **Workaround that worked, fully CLI, no repo changes:** build with `CODE_SIGN_STYLE=Automatic`
+> + a temporary `PRODUCT_BUNDLE_IDENTIFIER` override to an existing MFN25KNUGJ App ID that already carries both memory
+> caps (e.g. `com.example.CoreMLLLMChat`, cached profile in `~/Library/Developer/Xcode/UserData/Provisioning Profiles/`),
+> install, then drive devicectl with that bundle id (a scratch copy of `comprehensive_bench.sh` with `APP=` swapped).
+> The pbxproj now carries `CODE_SIGN_ENTITLEMENTS` so a normal `DEVELOPMENT_TEAM=… -allowProvisioningUpdates` build also wires the caps.
+
 Self-contained handoff for the next session(s). Two work streams: **(A) comprehensive on-device bench** (needs
 the iPhone), **(B) Core AI export** to close every blank (no device needed until the measure step). Read the
 "DON'T REPEAT" list first — this session burned a lot of cycles on three wrong conclusions.
