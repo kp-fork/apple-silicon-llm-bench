@@ -14,6 +14,20 @@
 stream, LiteRT-LM via `litert-mac-verify --max-tokens 512 --backend gpu`. **Protocol (iPhone):** short-chat,
 128 tokens, greedy, median of 3 cold launches (Yardstick app). Date: 2026-06-23. Author: john-rocky.
 
+**Conditions (per platform / runtime):**
+
+| Platform | Runtime | Prompt / prefill | Decode (greedy, temp 0) | Repeats |
+|---|---|---|--:|---|
+| iPhone 17 Pro | Core AI / MLX / LiteRT-LM | `"Explain what on-device AI means in simple terms."` (~20–30 tok incl. chat template) | **128 tok** | median of 3 cold |
+| Mac M4 Max | Core AI | 512-token synthetic prompt | **512 tok** | n=5 |
+| Mac M4 Max | MLX | short prompt | **512 tok** | — |
+| Mac M4 Max | LiteRT-LM | short prompt | **512 tok** | — |
+
+Decode is **iso** across runtimes (same generated-token count + greedy per platform; same int4 weight size unless
+noted) → the decode tok/s comparison is apples-to-apples. **The Mac *prefill* prompt is not yet iso** (Core AI uses
+a 512-token prompt, MLX/LiteRT short) → it affects **prefill tok/s only** (directional-only, see below), not decode,
+and is being standardized to one shared prompt. The iPhone table is fully iso.
+
 > ⚠️ **Quantization is not uniform — this is the central caveat.** MLX and Core AI are benchmarked at
 > **4-bit** (their standard mobile weight size). For LiteRT-LM we benchmark **the file litert-community
 > actually publishes**, which differs per model: **DeepSeek-R1 and Phi-4-mini ship only as INT8 (q8)**;
