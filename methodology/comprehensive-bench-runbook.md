@@ -77,3 +77,22 @@ Suggested energy subset (the efficiency story = the next theme):
 - **Cold vs warm:** every headless launch is a fresh process = cold. For warm, launch once manually, then drive.
 - **`devicectl --console` inside a `while read` loop eats the loop's stdin** — the driver uses `</dev/null`.
 - **Wireless option for energy:** pair over WiFi (`…coredevice.local`) so you can drive runs with USB unplugged.
+
+## Mac iso protocol — make prefill iso too (NEW; iPhone is already iso)
+The published Mac table measured decode iso (same 512-gen + greedy for all runtimes) but the **prefill prompt was
+not iso** (Core AI used a 512-token synthetic prompt, MLX/LiteRT short prompts → prefill tok/s only directional).
+Fix going forward: **all three runtimes use the SAME prompt-token-count AND the SAME decode-token-count**, greedy.
+
+Standard: **512-token prefill + 512 decode, greedy, n≥3.** One shared prompt for everyone.
+1. Build a fixed ~512-token prompt once (filler is fine — content doesn't change decode; only the token count must
+   match). Save it as `prompt_512.txt` and reuse for MLX + LiteRT; Core AI's `-p 512` is its synthetic equivalent.
+2. Commands (identical prefill 512 / decode 512):
+   - **Core AI:** `llm-benchmark --model <bundle> -p 512 -g 512 -n 5`  (was `-g 1024`; use `-g 512` to match)
+   - **MLX:** `mlx_lm.generate --model <repo> --prompt "$(cat prompt_512.txt)" --max-tokens 512 --temp 0`
+     (or the `scripts/measure_energy.py` wrapper for the streamed decode rate)
+   - **LiteRT-LM:** `litert-mac-verify <model> "$(cat prompt_512.txt)" --max-tokens 512 --backend gpu`
+3. Report decode tok/s (iso as before) AND prefill tok/s (now iso — drop the "directional-only" caveat once
+   re-measured). Update the report's Conditions table to "Mac prefill = 512-token shared prompt (all runtimes)".
+
+Note: decode tok/s barely moves vs the old numbers (decode is prefill-insensitive); this mainly makes the
+**prefill** column a fair apples-to-apples comparison and removes the only non-iso caveat in the study.

@@ -53,9 +53,10 @@ the reason in the report** (these are legitimate Core AI iOS-ANE pipeline covera
    scripts/comprehensive_bench.sh speed Ministral ; … Gemma3-1B ; … Phi-4-mini ; … Llama-3.2 ; … OLMo-2 ; … SmolLM3
    ```
    (or just `scripts/comprehensive_bench.sh speed` for the whole matrix). Record decode_tok_s / ttft_ms / peak_mb.
-4. **Mac column:** bench the **macOS** Core AI bundle for each via coreai-models' `llm-benchmark` (allowed on Mac;
-   the macOS dynamic exports `<name>_dynamic` are in `exports/`). Fills the Mac Core AI cells for Phi/OLMo/SmolLM3
-   (Gemma3 327.2, Llama 198.3, Ministral were Mac-blocked before — re-check with the new classes).
+4. **Mac column (use the iso protocol):** bench the **macOS** Core AI bundle for each via coreai-models'
+   `llm-benchmark` — **same 512-token prompt + 512 decode greedy as MLX/LiteRT** (see the *Mac iso protocol* section
+   in `comprehensive-bench-runbook.md`). Fills the Mac Core AI cells for Phi/OLMo/SmolLM3/Ministral (Gemma3 327.2,
+   Llama 198.3 already done). Re-measure MLX/LiteRT Mac with the same 512-token prompt so prefill is iso too.
 
 ## Update the report + data
 - `docs/litert-community-vs-mlx-coreai.md` **and** `~/code/litertlm-convert/reports/litert-community-vs-mlx-coreai.md`:
