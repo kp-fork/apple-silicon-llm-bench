@@ -179,6 +179,50 @@ Ministral-3-3B GPU). Core AI ≥ MLX ≫ LiteRT at ≤1.7B-qwen and 1B; **MLX le
   the one GPU block); **MLX ×3** — no mlx-community repo for OLMo-2/VibeThinker, MLX-Swift can't load `ministral3`;
   **LiteRT ×2** — Gemma3-1B gated, Phi int8 (3.6 GB) OOM. (Llama/Ministral 3B LiteRT now load with the memory entitlements.)
 
+## Energy — iPhone 17 Pro, sustained decode (battery-delta, J/token)
+
+The decode tables above are short-chat snapshots. This axis asks the on-device **efficiency** question:
+*which runtime delivers the most tokens per joule under a sustained load?* Instrument: `UIDevice.batteryLevel`
+(1% steps) sampled across a **600 s `energy` task** that re-prompts to keep the runtime busy; the ~5% drop →
+joules via the device pack (iPhone 17 Pro = 16.5 Wh). Whole-system (display + radios + OS included), **±~12% per
+run** at 1% resolution — compare *within device* only. Method: [`energy-ios.md`](../methodology/energy-ios.md). One
+model, the dense 3B flagship, all four runtimes (same `.litertlm`/4-bit weights, unplugged, 85–95% start, screen on):
+
+| Runtime | **J/token** ↓ | avg W | sustained tok/s | (short-chat tok/s) | tokens/Wh |
+|---|--:|--:|--:|--:|--:|
+| **Core AI GPU** | **0.224** | 4.67 | 21.0 | 19.3 | 16 058 |
+| **Core AI ANE** | **0.225** | 4.62 | 20.6 | 24.2 | 16 019 |
+| **MLX** | **0.245** | 4.70 | 19.3 | 34.0 | 14 681 |
+| **LiteRT-LM** | **0.324** | 4.31 | 13.6 | 18.4 | 11 120 |
+
+**Core AI (ANE ≈ GPU) is the most energy-efficient — ~9% better than MLX, ~44% better than LiteRT-LM.** Three
+things drive it, and all four runtimes drained exactly the same 5% (1 quantum), so **J/token is governed by
+*sustained* throughput** (joules are constant; tokens differ):
+1. **Sustained load reorders the short-chat ranking — MLX is hit hardest.** MLX's 34 tok/s short-chat lead collapses
+   to **19.3** under 10 min of thermal load (peak `serious`), *below* Core AI; LiteRT 18.4→13.6; Core AI is the most
+   thermally stable (ANE 24→20.6, GPU 19.3→21.0). The energy task is the realistic long-generation regime.
+2. **ANE ≈ GPU on-device** — the ANE's short-chat edge vanishes under throttling, and **whole-system power is
+   display/OS-dominated (~4.6 W for all)**, so the ANE's *chip*-level power advantage doesn't surface in
+   whole-system J/token.
+3. **The "low-power-but-slow → worst J/token" role belongs to LiteRT here** (lowest draw 4.31 W, but slowest 13.6
+   tok/s → worst 0.324) — the same shape the ANE showed *on the Mac* (below).
+
+**Versus the prior energy rows in this repo** (`results/raw/*-energy-*.jsonl`):
+- **The Mac pattern flips on the phone.** On **M4 Max**, CoreML/ANE gemma-4-E2B had the *lowest* watts (12.7 W) yet
+  the *worst* J/token (**0.478**) — its 33 tok/s kept the package powered longest; MLX (0.240) and llama.cpp (0.247)
+  won on speed. **On iPhone that inverts:** Core AI is *best*, because the GPU runtimes pay a steep on-device
+  throttling tax (MLX 35→19) and whole-system draw equalizes power. This is exactly the question
+  `energy-ios.md` posed — and the answer is **yes, the on-device throughput tax changes the energy winner.**
+- **Efficiency is architecture-specific, not runtime-absolute.** For **gemma-4-E2B on iPhone, LiteRT-LM was the
+  *best* (0.146 J/token)** — its first-class gemma kernels decode 30.8 tok/s sustained — whereas for Llama-3.2-3B
+  (generic path) LiteRT-LM is *worst* (0.324). So "which runtime is greenest" depends on whether the model has
+  first-class kernels, mirroring the decode-speed thesis.
+- **Model size dominates the absolute number.** qwen3-0.6B on MLX hit **0.066 J/token** (99 tok/s, stayed `fair`) —
+  ~4× more efficient than any 3B cell; a smaller model is the biggest energy lever, ahead of runtime choice.
+
+> ⚠️ Single-run, 1% battery resolution: treat ±0.02–0.03 J/token gaps (ANE vs GPU) as ties; the MLX and LiteRT
+> gaps are larger than the error bar. All rows verified `batteryState=unplugged` with a non-nil drop.
+
 ## Coverage — LiteRT *traces*, Core AI *reimplements* (out-of-the-box ease vs custom-code ceiling)
 
 Every model here converted to LiteRT with **zero custom code**; Core AI instead needs a hand-written class per
