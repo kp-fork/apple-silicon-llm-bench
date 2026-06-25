@@ -44,17 +44,18 @@ Driver: `scripts/comprehensive_bench.sh`.
 4. Energy (UNPLUGGED, selective, battery-limited): `… energy <model-id> <runtime>` then unplug, wait, `… collect`.
    **The money shot = Core AI ANE vs GPU J/token on the same model** (`qwen3-1.7b-ane` vs `-gpu`).
 
-## STREAM B — Core AI export to fill every blank
-**Export pass 2026-06-25 DONE:** 6 models exported + already wired into the app (catalog + bundleSpec + manifest).
-Bundles ready: **GPU for all 6** (Ministral/Gemma3/Phi/Llama/OLMo-2/SmolLM3), **ANE for 3** (Llama/OLMo-2/SmolLM3).
-The 3 missing ANE (Ministral/Gemma3/Phi) need a follow-up export. So Stream B now reduces to:
+## STREAM B — Core AI export DONE (2026-06-25); only the bench-continuation remains
+6 models exported + already wired (catalog + bundleSpec + manifest, all bundles verified). **Mac Core AI now
+10/10** (export session added macOS classes phi3/olmo2/smollm3/ministral, all parity PASS). **iPhone: GPU for all
+6, ANE for Llama/OLMo-2/SmolLM3.** So Stream B reduces to one session:
 
-1. **Gap-fill / bench-continuation** → `methodology/gap-fill-session.md` — **just rebuild (keep entitlements) →
-   side-load → measure the 9 new cells → update the report.** Wiring is already in place.
-2. (Follow-up) **Export session** → `methodology/coreai-export-session.md` — compile the 3 pending ANE bundles
-   (Ministral/Gemma3/Phi `_ane_pure4bit`), then re-run the gap-fill for those cells.
+→ **Gap-fill / bench-continuation** → `methodology/gap-fill-session.md` — **rebuild (keep entitlements) →
+  side-load → measure (9 iPhone cells + the Mac column) → update the report.** Wiring is in place.
 
-Only 3 cells stay permanently blank: Ministral iPhone-MLX (hard block); VibeThinker/OLMo-2 MLX (no repo).
+**6 permanently-blank cells, each with a documented reason** (do NOT chase — confirmed walls; see gap-fill doc):
+3× iPhone-ANE (Phi = compiler SIGSEGV on partial-rotary; Ministral = multimodal-fp8 loader; Gemma3 =
+dual-RoPE/sliding not expressible on the standard pipeline) + 3× MLX (Ministral iPhone arch block; VibeThinker /
+OLMo-2 no repo). Export playbook for any future arch: `methodology/coreai-export-session.md`.
 
 ---
 
