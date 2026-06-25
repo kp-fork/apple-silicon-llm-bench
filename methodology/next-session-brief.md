@@ -44,16 +44,17 @@ Driver: `scripts/comprehensive_bench.sh`.
 4. Energy (UNPLUGGED, selective, battery-limited): `… energy <model-id> <runtime>` then unplug, wait, `… collect`.
    **The money shot = Core AI ANE vs GPU J/token on the same model** (`qwen3-1.7b-ane` vs `-gpu`).
 
-## STREAM B — Core AI export to fill every blank (split into two separate sessions)
-6 export classes/shims → all 10 models become 3-way Core AI (Mac + iPhone); only 3 MLX cells stay permanently
-blank (Ministral iPhone-MLX hard block; VibeThinker/OLMo MLX = no repo). Run as **two independent sessions:**
+## STREAM B — Core AI export to fill every blank
+**Export pass 2026-06-25 DONE:** 6 models exported + already wired into the app (catalog + bundleSpec + manifest).
+Bundles ready: **GPU for all 6** (Ministral/Gemma3/Phi/Llama/OLMo-2/SmolLM3), **ANE for 3** (Llama/OLMo-2/SmolLM3).
+The 3 missing ANE (Ministral/Gemma3/Phi) need a follow-up export. So Stream B now reduces to:
 
-1. **Export session** → `methodology/coreai-export-session.md` — self-contained, works only in
-   `~/code/coreai/coreai-models` (no device, no bench knowledge). Writes the classes, produces the bundles.
-   Order: Ministral (config shim) → Gemma3-iOS, Llama-iOS (macOS done) → Phi3, OLMo-2, SmolLM3 (new archs; SmolLM3
-   has a NoPE quirk).
-2. **Gap-fill session** → `methodology/gap-fill-session.md` — runs after, with the iPhone. Wires the bundles into
-   the app (catalog + bundleSpec + manifest), rebuilds (keep entitlements), side-loads, measures, updates the report.
+1. **Gap-fill / bench-continuation** → `methodology/gap-fill-session.md` — **just rebuild (keep entitlements) →
+   side-load → measure the 9 new cells → update the report.** Wiring is already in place.
+2. (Follow-up) **Export session** → `methodology/coreai-export-session.md` — compile the 3 pending ANE bundles
+   (Ministral/Gemma3/Phi `_ane_pure4bit`), then re-run the gap-fill for those cells.
+
+Only 3 cells stay permanently blank: Ministral iPhone-MLX (hard block); VibeThinker/OLMo-2 MLX (no repo).
 
 ---
 

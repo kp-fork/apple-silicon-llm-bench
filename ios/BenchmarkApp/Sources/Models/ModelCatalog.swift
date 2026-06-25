@@ -827,6 +827,61 @@ public enum ModelCatalog {
             quantization: "INT4 (dynamic)",
             parameterCountB: 1.5, onDiskSizeMB: 900, hfRepoId: ""
         ),
+        // 2026-06-25 export pass — GPU for all 6; ANE only llama/olmo2/smollm3 (ministral/gemma3/phi ANE pending)
+        ModelInfo(
+            id: "core-ai/ministral-3b-gpu",
+            displayName: "Ministral-3-3B (Core AI, GPU)",
+            quantization: "INT4 (dynamic)",
+            parameterCountB: 3.0, onDiskSizeMB: 1800, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/gemma3-1b-gpu",
+            displayName: "Gemma3-1B (Core AI, GPU)",
+            quantization: "INT4 (dynamic)",
+            parameterCountB: 1.0, onDiskSizeMB: 574, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/phi-4-mini-gpu",
+            displayName: "Phi-4-mini (Core AI, GPU)",
+            quantization: "INT4 (dynamic)",
+            parameterCountB: 3.8, onDiskSizeMB: 2000, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/llama-3.2-3b-ane",
+            displayName: "Llama-3.2-3B (Core AI, ANE)",
+            quantization: "4-bit palettized (uniform g32)",
+            parameterCountB: 3.0, onDiskSizeMB: 2300, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/llama-3.2-3b-gpu",
+            displayName: "Llama-3.2-3B (Core AI, GPU)",
+            quantization: "INT4 (dynamic)",
+            parameterCountB: 3.0, onDiskSizeMB: 1700, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/olmo2-1b-ane",
+            displayName: "OLMo-2-1B (Core AI, ANE)",
+            quantization: "4-bit palettized (uniform g32)",
+            parameterCountB: 1.0, onDiskSizeMB: 1100, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/olmo2-1b-gpu",
+            displayName: "OLMo-2-1B (Core AI, GPU)",
+            quantization: "INT4 (dynamic)",
+            parameterCountB: 1.0, onDiskSizeMB: 806, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/smollm3-3b-ane",
+            displayName: "SmolLM3-3B (Core AI, ANE)",
+            quantization: "4-bit palettized (uniform g32)",
+            parameterCountB: 3.0, onDiskSizeMB: 2300, hfRepoId: ""
+        ),
+        ModelInfo(
+            id: "core-ai/smollm3-3b-gpu",
+            displayName: "SmolLM3-3B (Core AI, GPU)",
+            quantization: "INT4 (dynamic)",
+            parameterCountB: 3.0, onDiskSizeMB: 1600, hfRepoId: ""
+        ),
         ModelInfo(
             id: "core-ai/qwen3-4b-ane",
             displayName: "Qwen3-4B (Core AI, ANE)",

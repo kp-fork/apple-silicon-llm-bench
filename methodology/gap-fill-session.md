@@ -1,55 +1,64 @@
-# Gap-fill session — wire the new Core AI bundles into the bench + measure (run AFTER the export session)
+# Gap-fill / bench-continuation session — rebuild + measure the new Core AI bundles
 
-**Your job:** the export session produced Core AI bundles for up to 6 models in
-`~/code/coreai/coreai-models/exports/` (see its hand-off checklist). Wire each into the benchmark app, side-load,
-measure on iPhone (+ Mac), and fill the blanks in the report. You work in this repo
-(`~/Downloads/ios-llm-benchmark`). **iPhone 17 Pro must be connected.**
+**Status (2026-06-25 export pass): the wiring is DONE.** The export session produced bundles; this repo already has
+the catalog entries + bundleSpec cases + manifest rows for all 9 ready cells. **Your job is just: rebuild (keep
+entitlements) → side-load → measure → update the report.** iPhone 17 Pro must be connected.
 
-## Prereqs (verify before starting)
-- For each model to fill: `exports/<name>_gpu/` and `exports/<name>_ane_pure4bit/` each have a `*.h18p.aimodelc`
-  + `tokenizer/` + `metadata.json`. (Ministral/Gemma3/Llama may be GPU+ANE or, where only the iOS class was
-  written, both; Mac-only macOS bundles are fine for the Mac column.)
-- The app build has the **memory entitlements** (`increased-memory-limit` + `extended-virtual-addressing`).
+## What's ready (verified bundles in `~/code/coreai/coreai-models/exports/`)
+| Model | Core AI GPU | Core AI ANE | model-ids to measure |
+|---|---|---|---|
+| Ministral-3-3B | ✅ | ✗ pending | `core-ai/ministral-3b-gpu` |
+| Gemma3-1B | ✅ | ✗ pending | `core-ai/gemma3-1b-gpu` |
+| Phi-4-mini | ✅ | ✗ pending | `core-ai/phi-4-mini-gpu` |
+| Llama-3.2-3B | ✅ | ✅ | `core-ai/llama-3.2-3b-gpu` + `…-ane` |
+| OLMo-2-1B | ✅ | ✅ | `core-ai/olmo2-1b-gpu` + `…-ane` |
+| SmolLM3-3B | ✅ | ✅ | `core-ai/smollm3-3b-gpu` + `…-ane` |
+
+→ **9 new iPhone cells (6 GPU + 3 ANE).** The 3 missing ANE (Ministral / Gemma3 / Phi) need a follow-up export
+pass (their `_ane_pure4bit` bundle wasn't compiled) — leave those iPhone-ANE cells blank for now.
 
 ## ⚠ Critical (don't repeat past mistakes)
-- **Keep the memory entitlements.** Without them ≳2 GB models *falsely* OOM (this cost a whole session). They're
-  in `ios/BenchmarkApp/BenchmarkApp.entitlements` + `project.yml`; the App-ID capabilities are registered. If a
-  CLI `xcodebuild -allowProvisioningUpdates` fails on provisioning ("No Accounts" / capability not in profile),
-  rebuild once from **Xcode GUI** (it has the account), then CLI builds work off the cached profile.
+- **The app build MUST keep the memory entitlements** (`increased-memory-limit` + `extended-virtual-addressing`).
+  Without them the ≳2 GB bundles (Llama/SmolLM3 ANE 2.3 GB, Phi GPU 2.0 GB) will *falsely* OOM. Capabilities are
+  registered on the App ID. If a CLI build fails on provisioning, rebuild once from **Xcode GUI**, then CLI works.
 - **Never run an iOS bundle on the Mac** — measure on-device only.
-- **ANE cold-load compiles on-device** (slow first run, warms after). Run 3× cold and take the median.
+- **ANE cold-load compiles on-device** (slow first run, warms after) → run 3× cold, take the median.
 
-## Per model — wire it (3 edits, mirror the existing qwen3 / deepseek entries)
-1. **`ios/BenchmarkApp/Sources/Models/ModelCatalog.swift`** — add a `ModelInfo` for `core-ai/<model>-ane` and
-   `core-ai/<model>-gpu` (`hfRepoId: ""`; copy a qwen3/deepseek core-ai entry as the template).
-2. **`ios/BenchmarkApp/Sources/Runtimes/CoreAIRuntime.swift`** — add bundleSpec cases (before `default: return nil`):
+## Steps
+1. **Rebuild + install** (keep entitlements):
    ```
-   case "core-ai/<model>-ane": return ("<name>_ane", "static-shape")
-   case "core-ai/<model>-gpu": return ("<name>_gpu", "coreai-pipelined")
+   xcodebuild -project ios/BenchmarkApp/BenchmarkApp.xcodeproj -scheme BenchmarkApp -configuration Release \
+     -destination 'generic/platform=iOS' -allowProvisioningUpdates DEVELOPMENT_TEAM=MFN25KNUGJ \
+     -jobs 6 -derivedDataPath ~/bench-dd build
    ```
-   (device folder = `<name>_ane` / `<name>_gpu`; the ANE *source* dir is `exports/<name>_ane_pure4bit`.)
-3. **`results/raw/2026-06-25-comprehensive/manifest.tsv`** — add side-load rows:
-   `<Family>\t<params>\tcore-ai\tcore-ai/<model>-ane\tEX/<name>_ane_pure4bit\tCoreAIModels/<name>_ane` (and `-gpu`).
+   then install the `.app`. (Xcode GUI if provisioning balks.)
+2. **Side-load** the new bundles (manifest rows are already in place):
+   ```
+   scripts/comprehensive_bench.sh stage          # picks up the 9 new core-ai rows
+   ```
+3. **Measure iPhone** (short-chat 3× cold each):
+   ```
+   scripts/comprehensive_bench.sh speed Ministral ; … Gemma3-1B ; … Phi-4-mini ; … Llama-3.2 ; … OLMo-2 ; … SmolLM3
+   ```
+   (or just `scripts/comprehensive_bench.sh speed` for the whole matrix). Record decode_tok_s / ttft_ms / peak_mb.
+4. **Mac column:** bench the **macOS** Core AI bundle for each via coreai-models' `llm-benchmark` (allowed on Mac;
+   the macOS dynamic exports `<name>_dynamic` are in `exports/`). Fills the Mac Core AI cells for Phi/OLMo/SmolLM3
+   (Gemma3 327.2, Llama 198.3, Ministral were Mac-blocked before — re-check with the new classes).
 
-## Build → side-load → measure
-1. **Rebuild** (keep entitlements): `xcodebuild -project ios/BenchmarkApp/BenchmarkApp.xcodeproj -scheme BenchmarkApp
-   -configuration Release -destination 'generic/platform=iOS' -allowProvisioningUpdates DEVELOPMENT_TEAM=MFN25KNUGJ
-   -jobs 6 -derivedDataPath ~/bench-dd build`, then install. (Or Xcode GUI if provisioning balks.)
-2. **Side-load:** `scripts/comprehensive_bench.sh stage` (picks up the new manifest rows) — or per-bundle
-   `xcrun devicectl device copy to … --source exports/<name>_… --destination Documents/CoreAIModels/<name>_…`.
-3. **Measure iPhone:** `scripts/comprehensive_bench.sh speed <Family>` → short-chat 3× cold per (ane/gpu). Record
-   decode_tok_s / ttft_ms / peak_mb. (Energy later, per the comprehensive runbook — optional here.)
-4. **Measure Mac column:** bench the **macOS** Core AI bundle with coreai-models' `llm-benchmark` (allowed on Mac).
-
-## Update the report + raw data
-- `docs/litert-community-vs-mlx-coreai.md` **and** `~/code/litertlm-convert/reports/litert-community-vs-mlx-coreai.md`
-  (kept in sync): fill the Core AI cells in the Mac + iPhone tables for each newly-measured model; remove the
-  `✗ no class` / `untested` notes for those rows.
-- `results/raw/2026-06-24-coreai-iphone/results.jsonl` (or a new dated dir): append the measured rows.
-- **Commit + push.** Per `~/.claude/CLAUDE.md`: no "claude" in committer or message; don't commit CoreML/model
-  files or build files; keep the repo minimal.
+## Update the report + data
+- `docs/litert-community-vs-mlx-coreai.md` **and** `~/code/litertlm-convert/reports/litert-community-vs-mlx-coreai.md`:
+  fill the Core AI cells (Mac + iPhone) for these models; replace the `✗ no iOS class` / `✗ no wrapper` notes with
+  the measured numbers (leave Ministral/Gemma3/Phi iPhone-**ANE** as ✗ until the follow-up export).
+- Append rows to `results/raw/2026-06-24-coreai-iphone/results.jsonl` (or a new dated dir).
+- **Commit + push** (no "claude" in committer/message; don't commit model/build files).
 
 ## Done when
-All 6 fillable models show Core AI numbers (Mac + iPhone) in the report. The only remaining blanks are the 3
-permanent MLX cells (Ministral iPhone-MLX = MLX-Swift arch hard block; VibeThinker & OLMo-2 MLX = no
-mlx-community repo). Update `methodology/next-session-brief.md` status if you close the matrix.
+The 6 models show Core AI numbers (GPU + the 3 ANE) in the report. Remaining blanks: 3 Core AI iPhone-ANE
+(Ministral/Gemma3/Phi — follow-up export) + the 3 permanent MLX cells (Ministral iPhone-MLX hard block;
+VibeThinker/OLMo MLX = no repo). Update `next-session-brief.md` status.
+
+## (Reference) wiring pattern — for the 3 pending ANE or any FUTURE export
+For a new bundle `<name>_gpu` / `<name>_ane`: add a `ModelInfo` in `ModelCatalog.swift` + a bundleSpec case in
+`CoreAIRuntime.swift` (`-ane` → `("<name>_ane","static-shape")`, `-gpu` → `("<name>_gpu","coreai-pipelined")`) +
+a `manifest.tsv` row (src = `EX/<name>_{gpu|ane_pure4bit}`, dest = `CoreAIModels/<name>_{gpu|ane}`). Mirror the
+2026-06-25 entries (search the dated comment in each file).

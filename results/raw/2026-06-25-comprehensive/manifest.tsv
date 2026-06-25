@@ -46,3 +46,13 @@ Gemma4-E2B	2B-eff	mlx	mlx-community/gemma-4-e2b-it-4bit	-	-
 Gemma4-E2B	2B-eff	litert-lm	litert-community/gemma-4-E2B-it-litert-lm	-	-
 Gemma4-E4B	4B-eff	mlx	mlx-community/gemma-4-e4b-it-4bit	-	-
 Gemma4-E4B	4B-eff	litert-lm	litert-community/gemma-4-E4B-it-litert-lm	-	-
+# ── 2026-06-25 export pass: 6 models added to Core AI (GPU all; ANE llama/olmo2/smollm3) ──
+Ministral	3B	core-ai	core-ai/ministral-3b-gpu	EX/ministral3_3b_gpu	CoreAIModels/ministral3_3b_gpu
+Gemma3-1B	1B	core-ai	core-ai/gemma3-1b-gpu	EX/gemma3_1b_gpu	CoreAIModels/gemma3_1b_gpu
+Phi-4-mini	3.8B	core-ai	core-ai/phi-4-mini-gpu	EX/phi4_mini_gpu	CoreAIModels/phi4_mini_gpu
+Llama-3.2	3B	core-ai	core-ai/llama-3.2-3b-ane	EX/llama32_3b_ane_pure4bit	CoreAIModels/llama32_3b_ane
+Llama-3.2	3B	core-ai	core-ai/llama-3.2-3b-gpu	EX/llama32_3b_gpu	CoreAIModels/llama32_3b_gpu
+OLMo-2	1B	core-ai	core-ai/olmo2-1b-ane	EX/olmo2_1b_ane_pure4bit	CoreAIModels/olmo2_1b_ane
+OLMo-2	1B	core-ai	core-ai/olmo2-1b-gpu	EX/olmo2_1b_gpu	CoreAIModels/olmo2_1b_gpu
+SmolLM3	3B	core-ai	core-ai/smollm3-3b-ane	EX/smollm3_3b_ane_pure4bit	CoreAIModels/smollm3_3b_ane
+SmolLM3	3B	core-ai	core-ai/smollm3-3b-gpu	EX/smollm3_3b_gpu	CoreAIModels/smollm3_3b_gpu

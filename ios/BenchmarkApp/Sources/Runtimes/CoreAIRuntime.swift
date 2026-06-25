@@ -82,6 +82,16 @@ public final class CoreAIRuntime: LLMRuntime, @unchecked Sendable {
         case "core-ai/tinyswallow-1.5b-gpu": return ("tinyswallow_1_5b_gpu", "coreai-pipelined")
         case "core-ai/vibethinker-1.5b-ane": return ("vibethinker_1_5b_ane", "static-shape")
         case "core-ai/vibethinker-1.5b-gpu": return ("vibethinker_1_5b_gpu", "coreai-pipelined")
+        // 2026-06-25 export pass — GPU for all 6, ANE for llama/olmo2/smollm3 (ministral/gemma3/phi ANE pending)
+        case "core-ai/ministral-3b-gpu":  return ("ministral3_3b_gpu", "coreai-pipelined")
+        case "core-ai/gemma3-1b-gpu":     return ("gemma3_1b_gpu", "coreai-pipelined")
+        case "core-ai/phi-4-mini-gpu":    return ("phi4_mini_gpu", "coreai-pipelined")
+        case "core-ai/llama-3.2-3b-ane":  return ("llama32_3b_ane", "static-shape")
+        case "core-ai/llama-3.2-3b-gpu":  return ("llama32_3b_gpu", "coreai-pipelined")
+        case "core-ai/olmo2-1b-ane":      return ("olmo2_1b_ane", "static-shape")
+        case "core-ai/olmo2-1b-gpu":      return ("olmo2_1b_gpu", "coreai-pipelined")
+        case "core-ai/smollm3-3b-ane":    return ("smollm3_3b_ane", "static-shape")
+        case "core-ai/smollm3-3b-gpu":    return ("smollm3_3b_gpu", "coreai-pipelined")
         default:                       return nil
         }
     }
