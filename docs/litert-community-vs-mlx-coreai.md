@@ -121,6 +121,7 @@ sliding/full attention not expressible on the single-mask / single-RoPE iOS pipe
 | TinySwallow-1.5B | **74.8** | **75.0** | **71.6** | **30.6** |
 | VibeThinker-1.5B | **71.5** | **75.7** | — | **30.4** |
 | Qwen3-1.7B | **64.8** | **67.6** | **62.8** | **23.2** |
+| Qwen3-4B (iso-int4) | **29.7** | **28.3** | **27.3** | **21.2** |
 | Gemma3-1B | ✗ dual-RoPE△ | **103.6** | **97.6** | gated |
 | Phi-4-mini | ✗ partial-RoPE¶ | ✗ partial-RoPE¶ | **29.6** | OOM |
 | OLMo-2-1B | **95.6** | **86.1** | — | **24.6** |
@@ -210,12 +211,12 @@ runtimes (4-bit unless noted; unplugged, screen on, mid-band battery):
 
 **Qwen3-4B** (all **iso-int4** — LiteRT = litert-community's official mixed-int4, so no quant confound):
 
-| Runtime | **J/token** ↓ | sustained tok/s | **peak MB** | tok/1% |
-|---|--:|--:|--:|--:|
-| **Core AI ANE** | **0.242** | 17.4 | 3,181 | 2,458 |
-| **MLX** | **0.242** | 18.2 | 3,996 | 2,458 |
-| **Core AI GPU** | 0.290 | 16.5 | **873** | 2,048 |
-| **LiteRT-LM** | **0.725** | 18.0\* | 2,217 | 819 |
+| Runtime | **J/token** ↓ | sustained tok/s | (short-chat) | **peak MB** | tok/1% |
+|---|--:|--:|--:|--:|--:|
+| **Core AI ANE** | **0.242** | 17.4 | 29.7 | 3,181 | 2,458 |
+| **MLX** | **0.242** | 18.2 | 27.3 | 3,996 | 2,458 |
+| **Core AI GPU** | 0.290 | 16.5 | 28.3 | **873** | 2,048 |
+| **LiteRT-LM** | **0.725** | 18.0\* | 21.2 | 2,217 | 819 |
 
 \* LiteRT's decode *rate* is competitive (~18) but its **effective** throughput is ~4.7 tok/s — it generated only
 **4,096** tokens in the window vs 12,288 for ANE/MLX (re-prefill / overhead-dominated, 865 s gen-time) → **3× worst

@@ -52,3 +52,7 @@
 {"model": "SmolLM3-3B", "group": "own", "framework": "coreai", "device": "iphone17pro", "backend": "ane", "decode_tps": 23.0, "ttft_ms": 431, "peak_mb": 2277, "runs_ok": "3/3"}
 {"model": "Ministral-3-3B", "group": "own", "framework": "coreai", "device": "iphone17pro", "backend": "gpu", "decode_tps": 17.6, "ttft_ms": 744, "peak_mb": 1459, "runs_ok": "3/3"}
 {"model": "Phi-4-mini", "group": "litert-comm", "framework": "coreai", "device": "iphone17pro", "backend": "gpu", "decode_tps": null, "note": "crash 0/3 partial-rotary (Array index out of range)", "runs_ok": "0/3"}
+{"model": "Qwen3-4B", "group": "litert-comm", "framework": "coreai", "device": "iphone17pro", "backend": "ane", "decode_tps": 29.7, "ttft_ms": 482, "peak_mb": 3189, "quant": "int4", "runs_ok": "3/3"}
+{"model": "Qwen3-4B", "group": "litert-comm", "framework": "coreai", "device": "iphone17pro", "backend": "gpu", "decode_tps": 28.3, "ttft_ms": 62, "peak_mb": 296, "quant": "int4", "runs_ok": "3/3"}
+{"model": "Qwen3-4B", "group": "litert-comm", "framework": "mlx", "device": "iphone17pro", "decode_tps": 27.3, "ttft_ms": 237, "peak_mb": 2348, "quant": "int4", "runs_ok": "3/3"}
+{"model": "Qwen3-4B", "group": "litert-comm", "framework": "litert", "device": "iphone17pro", "decode_tps": 21.2, "ttft_ms": 1164, "peak_mb": 1860, "quant": "int4(litert-community official mixed)", "runs_ok": "3/3"}
