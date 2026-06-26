@@ -224,8 +224,10 @@ run, same shape — no new bundle needed). DeepSeek-R1-1.5B, iPhone, one session
 flat, as a static-AOT control should be). So **warm-GPU does not approach the ANE — the ~10% ANE>GPU decode delta is
 steady-state, not a cold artifact.** Combined with the sign-flip (DeepSeek ANE>GPU, but Qwen3-1.7B / VibeThinker
 GPU>ANE), that small steady-state delta is best read as the **static-vs-dynamic export shape** (model-specific), **not**
-a stable engine ranking — a clean engine isolation (static-GPU) being un-runnable, this is as far as the data cleanly
-goes. The defensible headline is unchanged: throughput is **ANE ≈ GPU**; ANE's consistent, real win is **energy +
+a stable engine ranking. An earlier fixed-shape GPU artifact settles the direction outright (coreai-side, qwen3-0.6b,
+iPhone, iOS 26): **static-GPU 115 > ANE 69.6 > dynamic-GPU 57** — given the ANE's fixed shape, the GPU actually *beats*
+the ANE. (The current h18p/27β static-GPU rebuild is un-runnable, but this earlier artifact already settles the
+direction.) The defensible headline is unchanged: throughput is **ANE ≈ GPU**; ANE's consistent, real win is **energy +
 exclusivity** (MLX/LiteRT can't target the ANE at all), not raw decode tok/s.
 
 ## Energy — iPhone 17 Pro, sustained decode (battery-delta, J/token)
