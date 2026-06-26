@@ -129,6 +129,8 @@ sliding/full attention not expressible on the single-mask / single-RoPE iOS pipe
 | SmolLM3-3B | **23.0** | **20.5** | **36.8** | **22.8** |
 | Ministral-3-3B | ✗ multimodal-fp8◇ | **17.6** | ✗ | **18.0** |
 
+![On-device decode — Core AI ≈ MLX ≫ LiteRT-LM across architectures (iPhone 17 Pro)](charts/iphone_decode_summary.png)
+
 **On-device the result is size- and arch-dependent — but Core AI's ANE remains the trump card MLX/LiteRT structurally can't
 use.** For the qwen-arch ≤1.7B Core AI iOS covers, Core AI leads: DeepSeek-R1 **ANE 83.3** / GPU 75.9 vs MLX 73.0 vs
 LiteRT 30.7; TinySwallow 74.8 / 75.0 vs 71.6 vs 30.6; Qwen3-1.7B 64.8 / 67.6 vs 62.8 vs 23.2 — **Core AI ≈-or-beats MLX
@@ -213,6 +215,8 @@ DeepSeek-R1-1.5B, iPhone, exact weight bytes:
 | MLX | 73.0 | 0.95 | 69.3 | 86% |
 | LiteRT q8 (int8) | 30.7 | 1.70 | 52.2 | 65% |
 | LiteRT int4 (BOCTAV4) | 45.0 | 1.00 | 45.0 | 56% |
+
+![Engine efficiency — achieved decode bandwidth as % of the memory-bandwidth ceiling (DeepSeek-R1-1.5B, iPhone 17 Pro)](charts/iphone_bw_ceiling.png)
 
 Ceiling = the best-achieved cell = **≥ 80.8 GB/s effective** (this corrects a too-low 60 GB/s estimate; the A19 Pro
 peak is higher still). Two things fall out:
@@ -338,6 +342,8 @@ tokens differ):
 | DeepSeek-R1-1.5B (int8*, generic) | 2,917 | **6,144** / 4,506 | 5,662 | **Core AI (ANE)** |
 | Llama-3.2-3B (int4, generic) | 1,835 | 2,643 / **2,650** | 2,422 | **Core AI (GPU)** |
 | Qwen3-4B (int4, generic) | 819 | **2,458** / 2,048 | 2,458 | **Core AI / MLX** |
+
+![Tokens per 1% of iPhone battery — LiteRT-LM greenest only on Gemma](charts/iphone_tok_per_pct_flip.png)
 
 tokens per 1% battery — the **battery-efficiency *ranking* flips with the model.** For **Gemma — Google's first-class
 model — LiteRT-LM is the greenest runtime on Apple's phone (4,074 tok/1%)**. For a **generic model it falls to LAST
