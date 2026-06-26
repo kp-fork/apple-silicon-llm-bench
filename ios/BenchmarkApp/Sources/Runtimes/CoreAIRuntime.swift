@@ -92,6 +92,26 @@ public final class CoreAIRuntime: LLMRuntime, @unchecked Sendable {
         case "core-ai/olmo2-1b-gpu":      return ("olmo2_1b_gpu", "coreai-pipelined")
         case "core-ai/smollm3-3b-ane":    return ("smollm3_3b_ane", "static-shape")
         case "core-ai/smollm3-3b-gpu":    return ("smollm3_3b_gpu", "coreai-pipelined")
+        // 2026-06-26 static-GPU experiment — static-shape structure (extend_* fns, palettized LUT, identical to the
+        // *_ane bundle) AOT-compiled `--preferred-compute gpu` → 0 ANE regions. Same "static-shape" engine as the ANE
+        // bundle (structure match); the bundle's 0-ANE placement runs it on GPU. Forms the 3-way with *_ane (static/ANE)
+        // and *_gpu (dynamic/GPU): static-ANE vs static-GPU = pure engine; static-GPU vs dynamic-GPU = shape/cold.
+        // static_gpu = GPU MPSGraph (0 ANE regions) export. ⚠ 2026-06-26: these bundles compile but DO NOT LOAD in any
+        // engine variant (static-shape / coreai-pipelined / nil=auto all fail EngineFactory POSIX Code=2 "No such file"):
+        // the GPU compile emits an `mpsExecutable.mpsgraphpackage` (original_model/specialized_model/resources.bin) that
+        // lacks the per-bucket `binary_0.llir.bundle/.../extend_*` artifacts the static engine needs. Needs an export-side
+        // re-compile (full GPU bucket specialization / gemma4-bucketed port) — deferred to a separate session. Entries
+        // kept wired so that session only needs to drop in loadable bundles. (nil = let the factory auto-resolve.)
+        case "core-ai/deepseek-r1-1.5b-static-gpu": return ("deepseek_r1_1_5b_static_gpu", nil)
+        case "core-ai/tinyswallow-1.5b-static-gpu": return ("tinyswallow_1_5b_static_gpu", nil)
+        case "core-ai/vibethinker-1.5b-static-gpu": return ("vibethinker_1_5b_static_gpu", nil)
+        case "core-ai/qwen3-0.6b-static-gpu":       return ("qwen3_0_6b_static_gpu", nil)
+        case "core-ai/qwen3-1.7b-static-gpu":       return ("qwen3_1_7b_static_gpu", nil)
+        case "core-ai/qwen3-4b-static-gpu":         return ("qwen3_4b_static_gpu", nil)
+        case "core-ai/qwen3-8b-static-gpu":         return ("qwen3_8b_static_gpu", nil)
+        case "core-ai/olmo2-1b-static-gpu":         return ("olmo2_1b_static_gpu", nil)
+        case "core-ai/smollm3-3b-static-gpu":       return ("smollm3_3b_static_gpu", nil)
+        case "core-ai/llama-3.2-3b-static-gpu":     return ("llama32_3b_static_gpu", nil)
         default:                       return nil
         }
     }

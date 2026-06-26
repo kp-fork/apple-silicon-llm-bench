@@ -479,6 +479,18 @@ public enum ModelCatalog {
             hfFilePatterns: ["*.litertlm"],
             primaryFile: "model.litertlm"
         ),
+        // 2026-06-26 supplementary: byte-matched int4 of the litert-community q8 DeepSeek, to measure the
+        // int8-vs-delegate split (keep the official q8 row; this is the "LiteRT-could-do-int4" companion).
+        ModelInfo(
+            id: "own/DeepSeek-R1-1.5B-int4-BOCTAV4",
+            displayName: "DeepSeek-R1-1.5B (.litertlm, own int4 BOCTAV4)",
+            quantization: "INT4 (BOCTAV4 blockwise-32 OCTAV, int8 embed)",
+            parameterCountB: 1.5,
+            onDiskSizeMB: 1024,
+            hfRepoId: "own/DeepSeek-R1-1.5B-int4-BOCTAV4",
+            hfFilePatterns: ["*.litertlm"],
+            primaryFile: "model.litertlm"
+        ),
         // Qwen3 4B / 8B — same mixed-INT4 .litertlm line as 0.6B, for a size-scaling
         // curve (0.6B → 4B → 8B). 8B (~4.4 GB) is desktop/Mac-tier; on phones it can
         // exceed the per-app memory ceiling (gemma-3n-style jetsam), so it stays Mac-only.
@@ -914,6 +926,18 @@ public enum ModelCatalog {
             onDiskSizeMB: 4396,
             hfRepoId: ""
         ),
+        // 2026-06-26 static-GPU experiment: static-shape palettized bundle placed on GPU (0 ANE regions).
+        // 3-way with *_ane (static/ANE) + *_gpu (dynamic/GPU). Side-load to Documents/CoreAIModels/<name>_static_gpu/.
+        ModelInfo(id: "core-ai/deepseek-r1-1.5b-static-gpu", displayName: "DeepSeek-R1-1.5B (Core AI, static-GPU)", quantization: "4-bit palettized (uniform g32, static→GPU)", parameterCountB: 1.5, onDiskSizeMB: 992, hfRepoId: ""),
+        ModelInfo(id: "core-ai/tinyswallow-1.5b-static-gpu", displayName: "TinySwallow-1.5B (Core AI, static-GPU)", quantization: "4-bit palettized (uniform g32, static→GPU)", parameterCountB: 1.5, onDiskSizeMB: 881, hfRepoId: ""),
+        ModelInfo(id: "core-ai/vibethinker-1.5b-static-gpu", displayName: "VibeThinker-1.5B (Core AI, static-GPU)", quantization: "4-bit palettized (uniform g32, static→GPU)", parameterCountB: 1.5, onDiskSizeMB: 881, hfRepoId: ""),
+        ModelInfo(id: "core-ai/qwen3-0.6b-static-gpu", displayName: "Qwen3-0.6B (Core AI, static-GPU)", quantization: "4-bit palettized (uniform g32, static→GPU)", parameterCountB: 0.6, onDiskSizeMB: 393, hfRepoId: ""),
+        ModelInfo(id: "core-ai/qwen3-1.7b-static-gpu", displayName: "Qwen3-1.7B (Core AI, static-GPU)", quantization: "4-bit palettized (uniform g32, static→GPU)", parameterCountB: 1.7, onDiskSizeMB: 1000, hfRepoId: ""),
+        ModelInfo(id: "core-ai/qwen3-4b-static-gpu", displayName: "Qwen3-4B (Core AI, static-GPU)", quantization: "4-bit palettized (uniform g32, static→GPU)", parameterCountB: 4.0, onDiskSizeMB: 2100, hfRepoId: ""),
+        ModelInfo(id: "core-ai/qwen3-8b-static-gpu", displayName: "Qwen3-8B (Core AI, static-GPU)", quantization: "4-bit palettized (uniform g32, static→GPU)", parameterCountB: 8.0, onDiskSizeMB: 4200, hfRepoId: ""),
+        ModelInfo(id: "core-ai/olmo2-1b-static-gpu", displayName: "OLMo-2-1B (Core AI, static-GPU)", quantization: "4-bit palettized (uniform g32, static→GPU)", parameterCountB: 1.0, onDiskSizeMB: 828, hfRepoId: ""),
+        ModelInfo(id: "core-ai/smollm3-3b-static-gpu", displayName: "SmolLM3-3B (Core AI, static-GPU)", quantization: "4-bit palettized (uniform g32, static→GPU)", parameterCountB: 3.0, onDiskSizeMB: 1600, hfRepoId: ""),
+        ModelInfo(id: "core-ai/llama-3.2-3b-static-gpu", displayName: "Llama-3.2-3B (Core AI, static-GPU)", quantization: "4-bit palettized (uniform g32, static→GPU)", parameterCountB: 3.0, onDiskSizeMB: 1700, hfRepoId: ""),
     ]
 
     /// Default model picked when the app first launches.

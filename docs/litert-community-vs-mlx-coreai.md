@@ -180,6 +180,34 @@ Ministral-3-3B GPU). Core AI ≥ MLX ≫ LiteRT at ≤1.7B-qwen and 1B; **MLX le
   the one GPU block); **MLX ×3** — no mlx-community repo for OLMo-2/VibeThinker, MLX-Swift can't load `ministral3`;
   **LiteRT ×2** — Gemma3-1B gated, Phi int8 (3.6 GB) OOM. (Llama/Ministral 3B LiteRT now load with the memory entitlements.)
 
+## Supplementary — LiteRT int4 (the byte-vs-delegate split) + Core AI static-GPU status
+
+**LiteRT int8 vs int4 — measured, not estimated.** The official litert-community DeepSeek-R1-1.5B ships **q8** (int8).
+We pushed a **byte-matched int4** of the same model (own BOCTAV4 blockwise-32 + OCTAV, GSM8K 73%) as a supplementary
+row; the official q8 row stays. iPhone 17 Pro, short-chat, median of 3 cold:
+
+| DeepSeek-R1-1.5B · LiteRT-LM · iPhone | decode tok/s | peak MB |
+|---|--:|--:|
+| q8 (official litert-community) | 30.7 | ~1,700 |
+| int4 (own BOCTAV4, supplementary) | **45.0** | 1,250 |
+
+The int8→int4 byte reduction buys **1.47×** (30.7 → 45.0) — real, but short of the ~2× a pure-bandwidth model would
+give. And **even at iso-int4, LiteRT (45.0) is only ~0.6× of Core AI / MLX int4 (~73–83)** — the residual **~1.67×**
+is the **delegate/kernel gap** (WebGPU(Dawn)→Metal vs native-Metal fp16 GEMM). So the previously-estimated split is
+now **measured**: LiteRT-LM's on-device gap is **both** int8 bytes (~1.5×) **and** the delegate (~1.7×), of
+comparable magnitude — "it's just int8" does not explain it, and the native-Metal kernel path is the larger lever.
+
+**Core AI static-GPU 3-way — deferred (coverage gap).** A planned static-shape-on-GPU export (to isolate ANE-vs-GPU
+*engine* at matched static shape AND palettized quant) was compiled for all 10 dense models (`*_static_gpu`, verified
+0 ANE regions) but **does not load** in the app's Core AI runtime: every engine variant (`static-shape` /
+`coreai-pipelined` / auto) fails `EngineFactory` with POSIX Code 2 `No such file` — the GPU compile emits an
+`mpsExecutable.mpsgraphpackage` (original/specialized model + resources.bin) that lacks the per-bucket
+`binary_0.llir.bundle/…/extend_*` artifacts the static engine consumes. Fixing it is export-side (full GPU bucket
+specialization, or the gemma4-bucketed port) — **deferred to a separate session**. So the ANE-vs-GPU decode rows
+stand as stated: ≈ tie, sign-flipping by model (DeepSeek ANE>GPU, Qwen3-1.7B/VibeThinker GPU>ANE) = an
+export-shape + cold-launch effect, **not** a stable engine ranking — and ANE's defensible edge remains energy +
+exclusivity (MLX/LiteRT can't target the ANE at all), not raw decode tok/s.
+
 ## Energy — iPhone 17 Pro, sustained decode (battery-delta, J/token)
 
 The decode tables above are short-chat snapshots. This axis asks the on-device **efficiency** question:
