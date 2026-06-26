@@ -202,6 +202,28 @@ comparison stays inside one quant: **LiteRT int4 (45.0) is only ~0.6× of Core A
 LiteRT-LM's on-device gap is **both** int8 bytes (~1.5×, with an accuracy cost) **and** the delegate (~1.7×, iso-int4,
 quality-neutral) — "it's just int8" does not explain it, and the native-Metal kernel path is the larger, cleaner lever.
 
+**Engine efficiency — % of the memory-bandwidth ceiling.** Decode is memory-bandwidth-bound (a dense model reads all
+its weights once per token), so **achieved read-BW = decode tok/s × weight GB** is the bytes-normalized engine metric.
+DeepSeek-R1-1.5B, iPhone, exact weight bytes:
+
+| DeepSeek-R1-1.5B | decode | weight GB | achieved GB/s | % of ceiling |
+|---|--:|--:|--:|--:|
+| Core AI ANE | 83.3 | 0.97 | **80.8** | 100% |
+| Core AI GPU | 75.9 | 0.95 | 72.1 | 89% |
+| MLX | 73.0 | 0.95 | 69.3 | 86% |
+| LiteRT q8 (int8) | 30.7 | 1.70 | 52.2 | 65% |
+| LiteRT int4 (BOCTAV4) | 45.0 | 1.00 | 45.0 | 56% |
+
+Ceiling = the best-achieved cell = **≥ 80.8 GB/s effective** (this corrects a too-low 60 GB/s estimate; the A19 Pro
+peak is higher still). Two things fall out:
+1. **Native runtimes saturate the bus (86–100%); LiteRT-LM saturates only 56–65%.** So the WebGPU(Dawn)→Metal delegate
+   runs at **~0.6× the memory-bandwidth efficiency** of the native (ANE / Metal) kernels — the delegate gap as a
+   number, not an adjective. (Reproduces on Qwen3-4B iso-int4: native 92–100%, LiteRT 71%.)
+2. **LiteRT's int4 path is _less_ BW-efficient than its int8 path** (45.0 vs 52.2 GB/s; 56% vs 65%). That is exactly
+   why int4 bought only 1.47×, not the full 2× the byte-halving allows: if the int4 kernel saturated the bus like the
+   int8 one (52 GB/s ÷ 1.0 GB ≈ 52 tok/s), int4 would hit ~52, not 45. So **optimizing the int4 delegate kernel is a
+   concrete, separable LiteRT lever** — on top of shipping int4 at all.
+
 **Core AI ANE-vs-GPU — answered by a warm re-run, not a static-GPU bundle.** The clean way to isolate the ANE/GPU
 *engine* would be a static-shape GPU export (matched shape + quant vs the ANE). All 10 `*_static_gpu` bundles
 compiled (0 ANE regions) but are **un-runnable**: the GPU/MPSGraph compile emits only **one** specialized graph while
