@@ -186,16 +186,21 @@ Ministral-3-3B GPU). Core AI ≥ MLX ≫ LiteRT at ≤1.7B-qwen and 1B; **MLX le
 We pushed a **byte-matched int4** of the same model (own BOCTAV4 blockwise-32 + OCTAV, GSM8K 73%) as a supplementary
 row; the official q8 row stays. iPhone 17 Pro, short-chat, median of 3 cold:
 
-| DeepSeek-R1-1.5B · LiteRT-LM · iPhone | decode tok/s | peak MB |
-|---|--:|--:|
-| q8 (official litert-community) | 30.7 | ~1,700 |
-| int4 (own BOCTAV4, supplementary) | **45.0** | 1,250 |
+| DeepSeek-R1-1.5B · LiteRT-LM · iPhone | decode tok/s | peak MB | GSM8K (bf16 = 81.0) |
+|---|--:|--:|--:|
+| q8 (official litert-community, ≈quality-parity) | 30.7 | ~1,700 | ≈parity |
+| int4 (own BOCTAV4, **reference only — not parity**) | **45.0** | 1,250 | **73.0 (−8 pt)** |
 
-The int8→int4 byte reduction buys **1.47×** (30.7 → 45.0) — real, but short of the ~2× a pure-bandwidth model would
-give. And **even at iso-int4, LiteRT (45.0) is only ~0.6× of Core AI / MLX int4 (~73–83)** — the residual **~1.67×**
-is the **delegate/kernel gap** (WebGPU(Dawn)→Metal vs native-Metal fp16 GEMM). So the previously-estimated split is
-now **measured**: LiteRT-LM's on-device gap is **both** int8 bytes (~1.5×) **and** the delegate (~1.7×), of
-comparable magnitude — "it's just int8" does not explain it, and the native-Metal kernel path is the larger lever.
+⚠ **The int4 row is a speed _reference value_, not a quality-parity artifact.** It scores GSM8K 73.0% vs bf16 81.0%
+(−8 pt — a 1.5B reasoning model's 4-bit sensitivity; the 7B sibling is −1 pt, at parity). So read the byte effect as
+"int4 _could_ reach 45.0, but at an 8-pt accuracy cost," not as a free speedup. The official **q8 is the parity row.**
+
+With that caveat the split is still informative. The int8→int4 byte reduction buys **1.47×** (30.7 → 45.0) — real, but
+short of the ~2× a pure-bandwidth model would give, and it **crosses a quality boundary**. The cleaner, **iso-int4**
+comparison stays inside one quant: **LiteRT int4 (45.0) is only ~0.6× of Core AI / MLX int4 (~73–83)** — that residual
+**~1.67×** is the **delegate/kernel gap** (WebGPU(Dawn)→Metal vs native-Metal fp16 GEMM), measured at matched 4-bit. So
+LiteRT-LM's on-device gap is **both** int8 bytes (~1.5×, with an accuracy cost) **and** the delegate (~1.7×, iso-int4,
+quality-neutral) — "it's just int8" does not explain it, and the native-Metal kernel path is the larger, cleaner lever.
 
 **Core AI static-GPU 3-way — deferred (coverage gap).** A planned static-shape-on-GPU export (to isolate ANE-vs-GPU
 *engine* at matched static shape AND palettized quant) was compiled for all 10 dense models (`*_static_gpu`, verified
